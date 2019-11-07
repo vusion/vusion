@@ -1,0 +1,20 @@
+/* ============ VUSION_EXTEND_START ============ */
+.root {
+    color: blue;
+}
+
+.root:hover {
+    color: darkblue;
+}
+
+.root[disabled] {
+    color: aliceblue;
+}
+
+.other {
+    background: blue;
+}
+/* ============ VUSION_EXTEND_END ============ */
+.root:hover {
+    color: purple;
+}

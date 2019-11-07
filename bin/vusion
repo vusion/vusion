@@ -1,0 +1,26 @@
+#!/usr/bin/env node
+
+const checker = require('../lib/checker');
+const pkg = require('../package.json');
+
+if (!checker.checkNode())
+    process.exit(1);
+checker.checkUpgrade();
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('<task> [options]')
+    .version(pkg.version)
+    // Project commands
+    .command('init <material-type> <material-name>', 'Initialize a material')
+    .command('add <material-type> <material-name>', 'Add material in libary')
+    .command('publish <version>', 'Publish a new version')
+    .command('ghpages', 'Push output directory to gh-pages')
+    .command('dep', 'List dependencies of vusion')
+    .command('list', 'List views or components')
+    // Component commands
+    .command('transform <vue-path>', 'Transform Vue component between singlefile and multifile pattern')
+    .parse(process.argv);

@@ -1,0 +1,72 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const shell = require('shelljs');
+const readline = require('readline');
+const semver = require('semver');
+
+const pkgPath = process.cwd() + '/package.json';
+if (!fs.existsSync(pkgPath)) {
+    console.error('[ERROR] Not a npm package');
+    console.error('Please locate into a npm package directory.');
+    process.exit();
+}
+const pkg = require(pkgPath);
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('<version>')
+    .option('-n, --npm <npm>', 'Use other npm to publish like cnpm', 'npm')
+    .option('--tag <tag>', 'Registers the published package with the given tag')
+    .option('--access <public|restricted>', 'Tells the registry whether this package should be published as public or restricted.')
+    .option('--name-version', 'Use name and version in publish info, not only version')
+    .parse(process.argv);
+
+const name = pkg.name;
+const version = semver.clean(program.args[0] || pkg.version);
+if (!semver) {
+    console.error('[ERROR] invalid version');
+    process.exit();
+}
+
+/**
+ * 接收输入
+ */
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+});
+rl.prompt();
+
+rl.question(`
+The new version is "${version}".
+----------------------------------------
+Are you sure to continue? (yes/no) `, (answer) => {
+    rl.close();
+    answer = answer.toLowerCase();
+    if (!(answer === 'yes' || answer === 'y'))
+        return;
+
+    pkg.version = version;
+    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
+
+    const npmCmds = [`${program.npm} publish`];
+    if (program.tag)
+        npmCmds.push(`--tag ${program.tag}`);
+    if (program.access)
+        npmCmds.push(`--access ${program.access}`);
+
+    const info = name.endsWith('.vue') ? `${name}@${version}` : `v${version}`;
+
+    process.exit(shell.exec([
+        `git add package.json`,
+        npmCmds.join(' '), // prepublishOnly
+        `git commit -m ":bookmark: Publish ${info}"`,
+        `git push`,
+        `git tag ${info}`,
+        `git push origin ${info}`,
+    ].join(' && ')).code);
+});

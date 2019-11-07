@@ -1,0 +1,5 @@
+@extend '../some/path/u-button.vue/module.css';
+
+.root:hover {
+    color: purple;
+}

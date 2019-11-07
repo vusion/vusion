@@ -1,0 +1,37 @@
+/* ============ VUSION_EXTEND_START ============ */
+.root {
+    color: blue;
+}
+
+.root:hover {
+    color: darkblue;
+}
+
+.root[disabled] {
+    color: aliceblue;
+}
+
+.other {
+    background: blue;
+}
+/* ============ VUSION_EXTEND_END ============ */
+/* ============ VUSION_IMPORT_START ============ */
+.root[color="primary"] {
+    color: green;
+}
+
+.root[color="primary"]:hover {
+    color: greenyellow;
+}
+
+.root[disabled] {
+    color: lightgreen;
+}
+
+.other {
+    background: green;
+}
+/* ============ VUSION_IMPORT_END ============ */
+.root[color="primary"]:hover {
+    color: red;
+}

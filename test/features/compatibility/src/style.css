@@ -1,0 +1,6 @@
+.test {
+    font-size: 14px;
+    background: blue;
+    transform: translate(-50%, -50%);
+    transition: all 0.2s;
+}

@@ -1,0 +1,39 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const ghpages = require('gh-pages');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .option('-c, --config-path <path>', 'Vusion config path')
+    .option('-p, --path <path>', 'Alias of directory')
+    .parse(process.argv);
+
+let directory = program.args[0] || program.path;
+if (directory)
+    directory = path.resolve(process.cwd(), directory);
+else {
+    try {
+        const config = global.vusionConfig = require('../config/resolve')(program.configPath);
+        const webpackConfig = require('../webpack/doc');
+        directory = webpackConfig.output.path;
+    } catch (e) {}
+}
+
+if (!fs.existsSync(directory))
+    console.error(`Cannot find "${directory}" directory!`);
+if (!fs.statSync(directory).isDirectory())
+    console.error(`"${directory}" is not a directory!`);
+
+ghpages.clean();
+ghpages.publish(directory, (err) => {
+    if (err)
+        console.error(err);
+    else
+        console.info('gh-pages have been published.');
+    process.exit(err);
+});

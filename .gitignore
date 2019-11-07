@@ -1,0 +1,12 @@
+.DS_Store
+node_modules/
+public/
+dist/
+npm-debug.log
+__requireTest_*
+.vscode
+.nyc_output
+coverage
+
+package-lock.json
+yarn.lock

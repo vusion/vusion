@@ -1,0 +1,16 @@
+.root {
+    width: 100px;
+    height: 100px;
+    background: black;
+}
+.child1,.child2{
+    width: 10px;
+    height: 10px;
+    background: orange;
+}
+.child1{
+    float: left;
+}
+.child2{
+    float: right;
+}  

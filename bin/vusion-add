@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const { fs: vusionFS } = require('vusion-api');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('<material-type> <material-name>')
+    .parse(process.argv);
+
+/**
+ * Execute Task
+ */
+const materialType = program.args[0];
+if (materialType !== 'component' && materialType !== 'block')
+    throw new Error('Unsupport material type!');
+
+const materialName = program.args[1] || 'u-sample';
+
+vusionFS.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
+    console.info('Success! You can run serveral commands:');
+    console.info('Start the development server:');
+    console.info('    cd ' + path.relative(process.cwd(), dest));
+    console.info('    npm install');
+    console.info('    npm run doc');
+});

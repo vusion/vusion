@@ -1,0 +1,185 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    // .option('-c, --config-path <path>', 'Vusion config path')
+    // .option('-d, --directory <directory>', 'Optional to choose directory')
+    .option('-r, --recursive', 'Recursive to resolve directory')
+    .option('-v, --verbose', 'Show full path')
+    .option('-p, --commonpath <path>', 'Show common components path') // 项目中的通用组件根目录
+    .parse(process.argv);
+global.extraArgs = program.args;
+
+const directory = path.resolve(process.cwd(), program.args[0] || '');
+
+/*
+* 统计指标：
+*    模板利用率 = 简单的列表页、详情页、用户信息页 / 总模板数
+*    组件利用率 = 库中被使用的组件数 / (库中被使用的组件数 + 项目级别的通用组件数)
+*    根组件利用率 = 库中被使用的根组件数 / (库中被使用的 根组件数 + 项目级别的通用 根组件数)
+*/
+
+function mkRegExp(tag) {
+    return {
+        regexp: new RegExp(`<${tag}\\s`),
+        tag,
+    };
+}
+function mkstatics(repo, content) {
+    return ({ regexp, tag }) => {
+        if (regexp.test(content)) {
+            if (!repo[tag])
+                repo[tag] = 0;
+            repo[tag] += 1;
+        }
+    };
+}
+const commonPath = program.commonpath || 'src-vue/components/common';
+const packageJson = path.resolve(process.env.PWD, 'package.json');
+const cloudUIPath = path.resolve(process.env.PWD, 'node_modules/cloud-ui.vusion/src/components');
+const protoUIPath = path.resolve(process.env.PWD, 'node_modules/proto-ui.vusion/src/components');
+const componentPath = path.resolve(process.env.PWD, commonPath);
+
+const list = {};
+const rootlist = {};
+function sort(a, b) {
+    let r = new RegExp(a);
+    if (r.test(b)) {
+        return 1;
+    }
+    r = new RegExp(b);
+    if (r.test(a)) {
+        return -1;
+    }
+    return 0;
+}
+function readFile(path) {
+    const content = fs.readFileSync(path, 'utf8');
+    const rexp = /name:\s*'([\w-]+)'/;
+    if (rexp.test(content)) {
+        const name = rexp.exec(content)[1];
+        list[name] = true;
+        // 暂时用名称来区分根组件和子组件
+        for (const key in list) {
+            const rslt = sort(name, key);
+            switch (rslt) {
+                case 1:
+                    rootlist[key] = null;
+                    rootlist[name] = true;
+                    break;
+                case -1:
+                    rootlist[name] = null;
+                    break;
+                default:
+                    rootlist[name] = true;
+                    break;
+            }
+        }
+    }
+}
+
+function walkThroughFile(p) {
+    const files = fs.readdirSync(p);
+    files.forEach((file) => {
+        const dir = path.resolve(p, file);
+        const stats = fs.statSync(dir);
+        if (stats.isDirectory()) {
+            walkThroughFile(dir);
+        } else {
+            if (file.endsWith('.js') || file.endsWith('.vue'))
+                readFile(dir);
+        }
+    });
+}
+walkThroughFile(cloudUIPath);
+walkThroughFile(protoUIPath);
+// const VusionUI = Object.keys(list);
+// const vusionUIexp = VusionUI.map(mkRegExp);
+walkThroughFile(componentPath);
+const AllUI = Object.keys(list);
+const AllRootUI = Object.keys(rootlist).filter((k) => !!rootlist[k]);
+
+const allUIexp = AllUI.map(mkRegExp);
+const allrootUIexp = AllRootUI.map(mkRegExp);
+
+const AllUIUsed = {};
+const AllRootUIUsed = {};
+function filestatistic(p) {
+    const stats = fs.statSync(p);
+    if (stats.isDirectory()) {
+        const files = fs.readdirSync(p);
+        files.forEach((file) => {
+            const dir = path.resolve(p, file);
+            filestatistic(dir);
+        });
+    } else {
+        const content = fs.readFileSync(p, 'utf8');
+        allUIexp.forEach(mkstatics(AllUIUsed, content));
+        allrootUIexp.forEach(mkstatics(AllRootUIUsed, content));
+    }
+}
+let comps = 0;
+let nocomps = 0;
+function shake(component) {
+    if (/common|components/.test(component)) {
+        console.log(component);
+        if (/modal/.test(component)) {
+            comps += 0.5;
+        } else {
+            nocomps += 1;
+        }
+    } else {
+        filestatistic(directory + '/' + component);
+        comps += 1;
+    }
+}
+function listComponents(rootPath, relativePath) {
+    const dirPath = path.join(rootPath, relativePath);
+    const files = fs.readdirSync(dirPath);
+
+    const components = [];
+    const subdirPaths = [];
+    files.forEach((filename) => {
+        if (filename[0] === '.' || filename === 'node_modules')
+            return;
+
+        if (filename.endsWith('.vue'))
+            components.push(filename);
+        else {
+            const filepath = path.join(dirPath, filename);
+            if (fs.statSync(filepath).isDirectory())
+                subdirPaths.push(filename);
+        }
+    });
+    if (program.recursive)
+        subdirPaths.forEach((subdirPath) => listComponents(rootPath, relativePath + subdirPath + '/'));
+    if (program.verbose) {
+        components.forEach((component) => {
+            const path = path.join(rootPath, relativePath + component);
+            shake(path);
+            console.info(path);
+        });
+    } else
+        components.forEach((component) => {
+            const path = relativePath + component;
+            shake(path);
+            console.info(path);
+        });
+}
+console.info(directory);
+listComponents(directory, '');
+// 组件，页面
+console.info(`组件数：${comps}`, `页面数：${nocomps}`);
+// 使用到的库组件
+console.info(`使用到的库组件：`);
+console.info(Object.keys(AllUIUsed), Object.keys(AllUIUsed).length, AllUI.length);
+// 使用到的根组件
+console.info(`使用到的库根组件：`);
+console.info(Object.keys(AllRootUIUsed), Object.keys(AllRootUIUsed).length, AllRootUI.length);

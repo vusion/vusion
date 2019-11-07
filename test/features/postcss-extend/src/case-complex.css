@@ -1,0 +1,9 @@
+@extend './case-simple.css';
+
+.root:hover {
+    color: red;
+}
+
+.root[color="primary"]:hover {
+    color: red;
+}

@@ -1,0 +1,11 @@
+.root {
+    width: 100px;
+    height: 100px;
+    background: black;
+}
+.child1{
+    float: left;
+}
+.child2{
+    float: left;
+}  

@@ -1,0 +1,11 @@
+@import 'app/src/base.css';
+
+.test {
+    color: red;
+}
+
+@import 'basecss';
+
+.test2 {
+    color: blue;
+}

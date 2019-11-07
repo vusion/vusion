@@ -1,0 +1,6 @@
+@extend;
+
+.root:hover {
+    color: green;;
+    background: green;
+}

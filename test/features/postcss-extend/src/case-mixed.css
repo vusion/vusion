@@ -1,0 +1,10 @@
+@import './base-simple.css';
+@extend './base-simple-2.css';
+
+.root:hover {
+    color: yellow;
+}
+
+.root[color="primary"]:hover {
+    color: red;
+}

@@ -1,0 +1,15 @@
+.root[color="primary"] {
+    color: green;
+}
+
+.root[color="primary"]:hover {
+    color: greenyellow;
+}
+
+.root[disabled] {
+    color: lightgreen;
+}
+
+.other {
+    background: green;
+}

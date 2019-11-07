@@ -1,0 +1,19 @@
+.root {
+    color: blue;
+}
+
+.root:hover {
+    color: red;
+}
+
+.root[disabled] {
+    color: aliceblue;
+}
+
+.other {
+    background: blue;
+}
+
+.root[color="primary"]:hover {
+    color: red;
+}

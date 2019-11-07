@@ -1,0 +1,18 @@
+{
+  "check-coverage": false,
+  "per-file": false,
+  "statements": 80,
+  "branches": 60,
+  "functions": 80,
+  "lines": 80,
+  "reporter": [
+    "lcov",
+    "text",
+    "html"
+  ],
+  "cache": true,
+  "include": [
+    "lib/**",
+    "bin/**"
+  ]
+}
