@@ -3,6 +3,10 @@
 const path = require('path');
 const chalk = require('chalk');
 const { fs: vusionFS, ms: vusionMS } = require('vusion-api');
+const inquirer = require('inquirer');
+inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
+inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
+const fuzzy = require('fuzzy');
 
 /**
  * Parse Commands
@@ -10,7 +14,7 @@ const { fs: vusionFS, ms: vusionMS } = require('vusion-api');
 const program = require('commander');
 program
     .usage('<type> [source] [target]')
-    .description(`Add a material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
+    .description(`Add a kind of material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
     .option('--name <name>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
     .option('--skip', 'Skip questions and execute command quickly');
@@ -34,29 +38,137 @@ program.outputHelp = function (cb) {
 };
 
 program.parse(process.argv);
+
+const configurator = require('../lib/configurator');
+const config = configurator.load();
 /**
  * Execute Command
  */
-const materialType = program.args[0];
-if (materialType === 'module') {
-    vusionMS.addModule({
-        source: program.args[1],
-        target: program.args[2],
-        name: program.name,
-        title: program.title,
-    }).then(() => {
-        console.log('Success!');
-    });
+async function add(args) {
+    let materialType = program.args[0];
+    if (!materialType) {
+        const { type } = await inquirer.prompt([{
+            name: 'type',
+            type: 'list',
+            message: 'Which kind of material do you want to add?',
+            default: 'block',
+            choices: ['block', 'module', 'page'],
+        }]);
+
+        materialType = type;
+    }
+
+    if (materialType === 'module') {
+        const options = {
+            source: program.args[1],
+            target: program.args[2],
+            name: program.name,
+            title: program.title,
+        };
+
+        // Ask questions
+        if (!program.skip) {
+            if (!options.source) {
+                inquirer.prompt([{
+                    name: 'source',
+                    type: 'input',
+                    message: 'Please specify a module template path. Default is',
+                    default: './templates/module',
+                    // when: options.
+                }, {
+                    name: 'target',
+                    type: 'input',
+                    message: 'Please specify a module template path. Default is',
+                    default: './templates/module',
+                }]).then((result) => {
+                    console.log(result);
+                });
+            }
+        }
+
+        // Ask questions
+
+        // vusionMS.addModule(options).then(() => {
+        //     console.log('Success!');
+        // });
+    } else if (materialType === 'block') {
+        const options = {
+            source: program.args[1],
+            target: program.args[2],
+            name: program.name,
+            title: program.title,
+        };
+
+        // Ask questions
+        if (!program.skip) {
+            if (!options.source) {
+                let registry = config.default_registry;
+
+                if (!registry) {
+                    const registryResult = await inquirer.prompt([{
+                        name: 'registry',
+                        type: 'list',
+                        message: `Select a source registry ${chalk.gray('(输入中英文均可搜索)')}:`,
+                        default: config.default_registry,
+                        choices: Object.keys(config.registries).map((key) => ({
+                            name: key + ' ' + chalk.gray(`(${config.registries[key]})`),
+                            value: key,
+                        })),
+                    }]);
+                    registry = registryResult.registry;
+                }
+
+                if (registry.endsWith('npm')) {
+                    let blocks = await vusionMS.getBlocks();
+                    blocks = blocks.map((block) => {
+                        let name = block.name + ' ' + chalk.yellow(`(${block.title})`);
+                        if (block.description && block.description !== block.title)
+                            name += chalk.gray(` - ${block.description}`);
+                        return {
+                            name,
+                            value: block.name,
+                            short: block.name + ' ' + chalk.yellow(`(${block.title})`),
+                        };
+                    });
+
+                    await inquirer.prompt([{
+                        name: 'block',
+                        type: 'autocomplete',
+                        message: `Select a block on ${registry}:`,
+                        source(answersSoFar, input) {
+                            if (!input)
+                                return Promise.resolve(blocks);
+                            else {
+                                return Promise.resolve(fuzzy.filter(input, blocks, {
+                                    extract(item) { return item.name; },
+                                }).map((item) => blocks[item.index]));
+                            }
+                        },
+                    }]);
+                }
+                // , {
+                //     name: 'target',
+                //     type: 'input',
+                //     message: 'Please specify a module template path. Default is',
+                //     default: './templates/module',
+                // }]).then((result) => {
+                //     console.log(result);
+                // });
+            }
+        }
+    }
+    // if (materialType !== 'component' && materialType !== 'block')
+    //     throw new Error('Unsupport material type!');
+
+    // const materialName = program.args[1] || 'u-sample';
+
+    // vusionFS.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
+    //     console.info('Success! You can run serveral commands:');
+    //     console.info('Start the development server:');
+    //     console.info('    cd ' + path.relative(process.cwd(), dest));
+    //     console.info('    npm install');
+    //     console.info('    npm run doc');
+    // });
 }
-// if (materialType !== 'component' && materialType !== 'block')
-//     throw new Error('Unsupport material type!');
 
-// const materialName = program.args[1] || 'u-sample';
-
-// vusionFS.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
-//     console.info('Success! You can run serveral commands:');
-//     console.info('Start the development server:');
-//     console.info('    cd ' + path.relative(process.cwd(), dest));
-//     console.info('    npm install');
-//     console.info('    npm run doc');
-// });
+add();

@@ -10,3 +10,5 @@ coverage
 
 package-lock.json
 yarn.lock
+
+tmp
