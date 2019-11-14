@@ -10,7 +10,7 @@ const { fs: vusionFS, ms: vusionMS } = require('vusion-api');
 const program = require('commander');
 program
     .usage('<type> [source] [target]')
-    .description(`Add a material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
+    .description(`Remove a material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
     .option('--name <name>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
     .option('--skip', 'Skip questions and execute command quickly');
@@ -22,11 +22,11 @@ program.outputHelp = function (cb) {
             .replace(/^Usage: (.+)\n/mg, (m, $1) => 'Usage: ' + chalk.cyan($1) + '\n');
             // .replace(/^ {2}(\w+)/mg, (m, $1) => '  ' + chalk.yellow($1));
         const more = `\nFor examples:
-  vusion add block
-  vusion add block @cloud-ui/s-basic-form.vue ./src/something/create.vue
-  vusion add module
-  vusion add module ./templates/module2 ./src/views/dashboard
-  vusion add page
+  vusion remove block
+  vusion remove block @cloud-ui/s-basic-form.vue ./src/something/create.vue
+  vusion remove module
+  vusion remove module ./templates/module2 ./src/views/dashboard
+  vusion remove page
 `;
         const result = colored + more;
         return cb ? cb(result) : result;
@@ -39,7 +39,7 @@ program.parse(process.argv);
  */
 const materialType = program.args[0];
 if (materialType === 'module') {
-    vusionMS.addModule({
+    vusionMS.removeModule({
         source: program.args[1],
         target: program.args[2],
         name: program.name,

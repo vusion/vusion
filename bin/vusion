@@ -1,26 +1,69 @@
 #!/usr/bin/env node
 
+/**
+ * Check version
+ * Check node version before requiring/doing anything else
+ */
 const checker = require('../lib/checker');
-const pkg = require('../package.json');
 
 if (!checker.checkNode())
     process.exit(1);
 checker.checkUpgrade();
+
+const chalk = require('chalk');
+const pkg = require('../package.json');
+const didYouMean = require('didyoumean');
+
+// Setting edit distance to 60% of the input string's length
+didYouMean.threshold = 0.6;
 
 /**
  * Parse Commands
  */
 const program = require('commander');
 program
-    .usage('<task> [options]')
+    .usage('<command> [options]')
     .version(pkg.version)
     // Project commands
     .command('init <material-type> <material-name>', 'Initialize a material')
-    .command('add <material-type> <material-name>', 'Add material in libary')
+    .command('add <type> [source] [target]', `Add a material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
+    .command('remove <type> [source] [target]', `Remove a material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
     .command('publish <version>', 'Publish a new version')
     .command('ghpages', 'Push output directory to gh-pages')
-    .command('dep', 'List dependencies of vusion')
     .command('list', 'List views or components')
     // Component commands
-    .command('transform <vue-path>', 'Transform Vue component between singlefile and multifile pattern')
-    .parse(process.argv);
+    .command('transform <vue-path>', 'Transform Vue component between singlefile and multifile pattern');
+
+// output help information on unknown commands
+program.on('command:*', ([cmd]) => {
+    const availableCommands = program.commands.map((cmd) => cmd._name);
+    if (availableCommands.includes(cmd))
+        return;
+
+    program.outputHelp();
+    console.error();
+    console.error();
+    console.error(`  ` + chalk.red(`Unknown command ${chalk.yellow(cmd)}.`));
+    suggestCommands(cmd, availableCommands);
+});
+
+const oldOutputHelp = program.outputHelp;
+program.outputHelp = function (cb) {
+    oldOutputHelp.call(program, (text) => {
+        const colored = text
+            .replace(/^Usage: (.+)\n/mg, (m, $1) => 'Usage: ' + chalk.cyan($1) + '\n')
+            .replace(/^ {2}(\w+)/mg, (m, $1) => '  ' + chalk.yellow($1));
+        const more = `\n  Run ${chalk.cyan(`vusion <command> --help`)} for detailed usage of given command.\n`;
+        const result = colored + more;
+        return cb ? cb(result) : result;
+    });
+};
+
+function suggestCommands(unknownCommand, availableCommands) {
+    const suggestion = didYouMean(unknownCommand, availableCommands);
+    if (suggestion) {
+        console.error(`  ` + chalk.red(`Did you mean ${chalk.yellow(suggestion)}?`));
+    }
+}
+
+program.parse(process.argv);

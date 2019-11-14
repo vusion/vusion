@@ -9,20 +9,12 @@ const ghpages = require('gh-pages');
  */
 const program = require('commander');
 program
-    .option('-c, --config-path <path>', 'Vusion config path')
     .option('-p, --path <path>', 'Alias of directory')
     .parse(process.argv);
 
-let directory = program.args[0] || program.path;
+let directory = program.args[0] || program.path || 'public';
 if (directory)
     directory = path.resolve(process.cwd(), directory);
-else {
-    try {
-        const config = global.vusionConfig = require('../config/resolve')(program.configPath);
-        const webpackConfig = require('../webpack/doc');
-        directory = webpackConfig.output.path;
-    } catch (e) {}
-}
 
 if (!fs.existsSync(directory))
     console.error(`Cannot find "${directory}" directory!`);

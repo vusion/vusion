@@ -1,0 +1,22 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const { fs: vusionFS } = require('vusion-api');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('<cmd> <registry>')
+    .parse(process.argv);
+
+/**
+ * Execute Task
+ */
+const materialType = program.args[0];
+if (materialType !== 'component' && materialType !== 'block')
+    throw new Error('Unsupport material type!');
+
+const materialName = program.args[1] || 'u-sample';
+

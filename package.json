@@ -7,7 +7,6 @@
     "vusion": "bin/vusion"
   },
   "scripts": {
-    "precommit": "node node_modules/vusion-hooks/precommit",
     "test": "npm-run-all test-*"
   },
   "repository": "vusion/vusion",
@@ -29,9 +28,11 @@
     "node": ">=8"
   },
   "dependencies": {
-    "chalk": "^2.4.1",
-    "commander": "^4.0.0",
+    "chalk": "^2.4.2",
+    "commander": "^2.20.0",
+    "didyoumean": "^1.2.1",
     "gh-pages": "^1.2.0",
+    "inquirer": "^7.0.0",
     "node-notifier": "^5.2.1",
     "ora": "^1.3.0",
     "semver": "^5.5.0",
@@ -49,7 +50,7 @@
     "mocha": "^3.5.0",
     "npm-run-all": "^4.1.1",
     "nyc": "^11.2.1",
-    "vusion-hooks": "^0.2.2"
+    "vusion-hooks": "^0.3.0"
   },
   "husky": {
     "hooks": {
