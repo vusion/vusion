@@ -2,11 +2,14 @@
 
 const path = require('path');
 const chalk = require('chalk');
-const { fs: vusionFS, ms: vusionMS } = require('vusion-api');
+const fs = require('fs-extra');
+const { fs: vfs, ms: vms } = require('vusion-api');
 const inquirer = require('inquirer');
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
 const fuzzy = require('fuzzy');
+const ora = require('ora');
+const logger = require('../lib/logger');
 
 /**
  * Parse Commands
@@ -88,7 +91,7 @@ async function add(args) {
 
         // Ask questions
 
-        // vusionMS.addModule(options).then(() => {
+        // vms.addModule(options).then(() => {
         //     console.log('Success!');
         // });
     } else if (materialType === 'block') {
@@ -96,17 +99,16 @@ async function add(args) {
             source: program.args[1],
             target: program.args[2],
             name: program.name,
-            title: program.title,
         };
 
         // Ask questions
         if (!program.skip) {
             if (!options.source) {
-                let registry = config.default_registry;
+                let sourceType = config.default_registry;
 
-                if (!registry) {
-                    const registryResult = await inquirer.prompt([{
-                        name: 'registry',
+                if (!sourceType) {
+                    const sourceResult = await inquirer.prompt([{
+                        name: 'sourceType',
                         type: 'list',
                         message: `Select a source registry ${chalk.gray('(输入中英文均可搜索)')}:`,
                         default: config.default_registry,
@@ -115,45 +117,102 @@ async function add(args) {
                             value: key,
                         })),
                     }]);
-                    registry = registryResult.registry;
+                    sourceType = sourceResult.sourceType;
                 }
 
-                if (registry.endsWith('npm')) {
-                    let blocks = await vusionMS.getBlocks();
-                    blocks = blocks.map((block) => {
-                        let name = block.name + ' ' + chalk.yellow(`(${block.title})`);
-                        if (block.description && block.description !== block.title)
-                            name += chalk.gray(` - ${block.description}`);
-                        return {
-                            name,
-                            value: block.name,
-                            short: block.name + ' ' + chalk.yellow(`(${block.title})`),
-                        };
-                    });
+                // if (registry.endsWith('npm')) {
+                const spinner = ora('Loading blocks...').start();
+                let blocks = await vms.getBlocks();
+                blocks = blocks.map((block) => {
+                    let name = block.name + ' ' + chalk.yellow(`(${block.title})`);
+                    if (block.description && block.description !== block.title)
+                        name += chalk.gray(` - ${block.description}`);
+                    return {
+                        name,
+                        value: block.name,
+                        short: block.name + ' ' + chalk.yellow(`(${block.title})`),
+                    };
+                });
+                spinner.stop();
 
-                    await inquirer.prompt([{
-                        name: 'block',
-                        type: 'autocomplete',
-                        message: `Select a block on ${registry}:`,
-                        source(answersSoFar, input) {
-                            if (!input)
-                                return Promise.resolve(blocks);
-                            else {
-                                return Promise.resolve(fuzzy.filter(input, blocks, {
-                                    extract(item) { return item.name; },
-                                }).map((item) => blocks[item.index]));
-                            }
-                        },
-                    }]);
+                const { block } = await inquirer.prompt([{
+                    name: 'block',
+                    type: 'autocomplete',
+                    message: `Select a block:`,
+                    source(answersSoFar, input) {
+                        if (!input)
+                            return Promise.resolve(blocks);
+                        else {
+                            return Promise.resolve(fuzzy.filter(input, blocks, {
+                                extract(item) { return item.name; },
+                            }).map((item) => blocks[item.index]));
+                        }
+                    },
+                }]);
+
+                options.source = {
+                    type: sourceType,
+                    registry: config.registries[sourceType],
+                    name: block,
+                };
+            } else {
+                options.source = {
+                    type: config.default_registry,
+                    registry: config.registries[config.default_registry],
+                    name: options.source,
+                };
+            }
+
+            if (!options.target) {
+                const fileList = vfs.listAllFiles('', {
+                    patterns: ['!node_modules'],
+                    includes: /\.vue$/,
+                }).sort();
+                const { target } = await inquirer.prompt([{
+                    name: 'target',
+                    type: 'autocomplete',
+                    // type: 'fuzzypath', // 这个不太好用
+                    message: `Select a target vue file to add block:`,
+                    source(answersSoFar, input) {
+                        if (!input)
+                            return Promise.resolve(fileList);
+                        else {
+                            return Promise.resolve(fuzzy.filter(input, fileList, {
+                                // pre: style.green.open,
+                                // post: style.green.close,
+                            }).map((item) => item.string));
+                            //  ({
+                            //     name: item.string,
+                            //     value: item.original,
+                            //     short: item.original,
+                            // })));
+                        }
+                    },
+                }]);
+
+                options.target = target;
+
+                console.info();
+                console.info(`The target vue file may be changed in the process. Make sure it saved in your editor.`);
+                const { ok } = await inquirer.prompt([{
+                    name: 'ok',
+                    type: 'confirm',
+                    message: `Confirm to continue?`,
+                }]);
+
+                if (ok) {
+                    try {
+                        console.info();
+                        console.info(`✨  Adding block ${chalk.yellow(options.source.name)} in ${chalk.cyan(options.target)}`);
+                        const spinner = ora(` This might take a while...`).start();
+                        await vms.addBlock(options);
+                        spinner.stop();
+                        console.info();
+                        logger.done(`Successfully added block ${chalk.yellow(options.source.name)}.`);
+                    } catch (e) {
+                        console.error(e);
+                    }
                 }
-                // , {
-                //     name: 'target',
-                //     type: 'input',
-                //     message: 'Please specify a module template path. Default is',
-                //     default: './templates/module',
-                // }]).then((result) => {
-                //     console.log(result);
-                // });
             }
         }
     }
@@ -162,7 +221,7 @@ async function add(args) {
 
     // const materialName = program.args[1] || 'u-sample';
 
-    // vusionFS.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
+    // vfs.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
     //     console.info('Success! You can run serveral commands:');
     //     console.info('Start the development server:');
     //     console.info('    cd ' + path.relative(process.cwd(), dest));
