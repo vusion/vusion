@@ -169,10 +169,10 @@ async function exec() {
     let output = program.output;
     if (!output) {
         if (elNumber !== undefined) {
-            fs.ensureDirSync(path.join(cwd, 'screenshots'));
-            output = path.join(cwd, `screenshots/${elNumber}.png`);
+            fs.ensureDirSync('screenshots');
+            output = `screenshots/${elNumber}.png`;
         } else
-            output = path.join(cwd, 'screenshot.png');
+            output = 'screenshot.png';
     }
 
     if (!url) {

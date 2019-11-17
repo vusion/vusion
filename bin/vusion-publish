@@ -1,15 +1,19 @@
 #!/usr/bin/env node
 
 const fs = require('fs');
-const shell = require('shelljs');
-const readline = require('readline');
+const path = require('path');
 const semver = require('semver');
+const chalk = require('chalk');
+const inquirer = require('inquirer');
+const logger = require('../lib/logger');
+const { fs: vfs, ms: vms, utils: vutils } = require('vusion-api');
+const exec = require('../lib/exec');
 
-const pkgPath = process.cwd() + '/package.json';
+const pkgPath = path.resolve(process.cwd(), 'package.json');
 if (!fs.existsSync(pkgPath)) {
     console.error('[ERROR] Not a npm package');
     console.error('Please locate into a npm package directory.');
-    process.exit();
+    process.exit(1);
 }
 const pkg = require(pkgPath);
 
@@ -22,32 +26,21 @@ program
     .option('-n, --npm <npm>', 'Use other npm to publish like cnpm', 'npm')
     .option('--tag <tag>', 'Registers the published package with the given tag')
     .option('--access <public|restricted>', 'Tells the registry whether this package should be published as public or restricted.')
-    .option('--name-version', 'Use name and version in publish info, not only version')
     .parse(process.argv);
 
 const name = pkg.name;
 const version = semver.clean(program.args[0] || pkg.version);
-if (!semver) {
-    console.error('[ERROR] invalid version');
-    process.exit();
-}
 
-/**
- * 接收输入
- */
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
-rl.prompt();
+async function publish() {
+    const message = `The new version of ${chalk.yellow(name)} is ${chalk.yellow(version)}`;
+    const { yes } = await inquirer.prompt([{
+        name: 'yes',
+        type: 'confirm',
+        message: message + '\n' + '-'.repeat(message.length + 4 - 20)
++ `\nAre you sure to continue?`,
+    }]);
 
-rl.question(`
-The new version is "${version}".
-----------------------------------------
-Are you sure to continue? (yes/no) `, (answer) => {
-    rl.close();
-    answer = answer.toLowerCase();
-    if (!(answer === 'yes' || answer === 'y'))
+    if (!yes)
         return;
 
     pkg.version = version;
@@ -58,15 +51,48 @@ Are you sure to continue? (yes/no) `, (answer) => {
         npmCmds.push(`--tag ${program.tag}`);
     if (program.access)
         npmCmds.push(`--access ${program.access}`);
+    else if (pkg.name.includes('/'))
+        npmCmds.push(`--access public`);
 
     const info = name.endsWith('.vue') ? `${name}@${version}` : `v${version}`;
 
-    process.exit(shell.exec([
-        `git add package.json`,
-        npmCmds.join(' '), // prepublishOnly
-        `git commit -m ":bookmark: Publish ${info}"`,
-        `git push`,
-        `git tag ${info}`,
-        `git push origin ${info}`,
-    ].join(' && ')).code);
-});
+    try {
+        await exec('git add package.json');
+        await exec(npmCmds.join(' ')); // prepublishOnly
+
+        console.info();
+
+        if (pkg.vusion && pkg.vusion.type === 'block') {
+            await vms.publishBlock(Object.assign({}, pkg, {
+                labels: pkg.keywords,
+                title: pkg.vusion.title,
+                category: pkg.vusion.category,
+                access: pkg.vusion.access === 'public' ? 1 : 1,
+                screenshots: pkg.vusion.screenshots.join(','),
+                base: pkg.vusion.base || 'vue',
+                ui: pkg.vusion.base || 'cloud-ui',
+                registry: 'https://registry.npmjs.org',
+                team: pkg.vusion.team,
+                dependencies: JSON.stringify(pkg.dependencies),
+            }));
+            logger.done('Package registered in vusion platform.');
+        }
+        console.info();
+
+        logger.done('Successfully published!');
+    } catch (e) {
+        console.info();
+        logger.error('Publish failed!');
+        e && console.error(e.response.data);
+        process.exit(1);
+    }
+
+    await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
+    await exec(`git push`);
+    await exec(`git tag ${info}`);
+    await exec(`git push origin ${info}`);
+
+    logger.done('git branch and tag pushed!');
+}
+
+publish();
