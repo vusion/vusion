@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
+const fs = require('fs-extra');
 const path = require('path');
+const nodeURL = require('url');
 const chalk = require('chalk');
 // const { fs: vfs, ms: vms } = require('vusion-api');
 // const inquirer = require('inquirer');
@@ -32,6 +34,7 @@ For example:
 `)
     .option('-o, --output <output>', 'Output path')
     .option('-s, --selector <selector>', 'Select a element through CSS selector')
+    .option('-c, --code-example [number]', 'Auto detect selector from code example')
     .option('-d, --delay <delay>', 'Screenshot with a delay')
     .option('-w, --width <width>', 'Viewport width')
     .option('-h, --height <height>', 'Viewport height')
@@ -47,16 +50,16 @@ For example:
  * @param {string} selector the target CSS selector
  * @param {string} output output path
  */
-async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, output, delay, viewport) {
+async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, elNumber, output, delay, viewport) {
     if (targetUrl.startsWith('./'))
         targetUrl = targetUrl.slice(2);
-    targetUrl = targetUrl ? `http://127.0.0.1:${port}${targetUrl}` : `http://127.0.0.1:${port}/public/index.html`;
+    targetUrl = targetUrl ? `http://127.0.0.1:${port}/${targetUrl}` : `http://127.0.0.1:${port}/public/index.html`;
 
     const server = createServer(serverPath, port);
     console.info(chalk.white(`Create local server with port ${port}`));
     console.info(chalk.white(`The screenshot target url: ${targetUrl}`));
 
-    await screenshot(targetUrl, selector, output, delay, viewport);
+    await screenshot(targetUrl, selector, elNumber, output, delay, viewport);
 
     server.close();
 }
@@ -68,7 +71,7 @@ async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, 
  * @param {string} selector screenshot target CSS selector
  * @param {string} output output path
  */
-async function screenshot(url, selector, output, delay, viewport) {
+async function screenshot(url, selector, elNumber, output, delay, viewport) {
     // a terminal spinner
     const spinner = ora('Screenshoting...').start();
 
@@ -80,6 +83,8 @@ async function screenshot(url, selector, output, delay, viewport) {
         const page = await browser.newPage();
 
         // Set page's viewport
+        if (selector && elNumber !== undefined)
+            viewport.height = 3000;
         page.setViewport(viewport);
 
         // Visit the target url
@@ -91,7 +96,12 @@ async function screenshot(url, selector, output, delay, viewport) {
 
         // Screenshot a element through CSS selector;
         if (selector) {
-            const el = await page.$(selector);
+            let el;
+            if (elNumber) {
+                el = (await page.$$(selector))[elNumber];
+            } else {
+                el = await page.$(selector);
+            }
 
             if (!el) {
                 throw Error(`Could not find element that matches selector: ${selector}.`);
@@ -147,9 +157,23 @@ function minifyImg(imgPath, outputDir) {
 }
 
 async function exec() {
-    const { selector, delay } = program;
+    let { selector, delay } = program;
     const url = program.args[0];
-    const output = program.output || path.join(cwd, 'screenshot.png');
+
+    let elNumber;
+    if (!selector && program.codeExample !== undefined) {
+        selector = `[class^="u-code-example_demo_"]`;
+        elNumber = isNaN(parseInt(program.codeExample)) ? 0 : program.codeExample;
+    }
+
+    let output = program.output;
+    if (!output) {
+        if (elNumber !== undefined) {
+            fs.ensureDirSync(path.join(cwd, 'screenshots'));
+            output = path.join(cwd, `screenshots/${elNumber}.png`);
+        } else
+            output = path.join(cwd, 'screenshot.png');
+    }
 
     if (!url) {
         console.info(chalk.red('The url is required!'));
@@ -164,10 +188,11 @@ async function exec() {
     };
 
     if (local) {
-        const port = await detect(DEFAULT_PORT);
-        await screenshotWithLocalServer(cwd, port, url, selector, output, delay, viewport);
+        // const port = await detect(DEFAULT_PORT);
+        // await screenshotWithLocalServer(cwd, port, url, selector, elNumber, output, delay, viewport);
+        await screenshot(nodeURL.pathToFileURL(url), selector, elNumber, output, delay, viewport);
     } else {
-        await screenshot(url, selector, output, delay, viewport);
+        await screenshot(url, selector, elNumber, output, delay, viewport);
     }
 }
 
