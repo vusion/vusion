@@ -3,7 +3,7 @@
 const path = require('path');
 const chalk = require('chalk');
 const fs = require('fs-extra');
-const { fs: vfs, ms: vms } = require('vusion-api');
+const { fs: vfs, ms: vms, utils: vutils } = require('vusion-api');
 const inquirer = require('inquirer');
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
@@ -17,8 +17,8 @@ const logger = require('../lib/logger');
 const program = require('commander');
 program
     .usage('<type> [source] [target]')
-    .description(`Add a kind of material: ${chalk.yellow('block')}, ${chalk.yellow('module')} or ${chalk.yellow('page')}`)
-    .option('--name <name>', 'Rename material in target path')
+    .description(`Add a kind of material: ${chalk.yellow('block')}, ${chalk.yellow('module')}`) // or ${chalk.yellow('page')}`)
+    .option('--name <rename>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
     .option('--skip', 'Skip questions and execute command quickly');
 
@@ -30,11 +30,11 @@ program.outputHelp = function (cb) {
             // .replace(/^ {2}(\w+)/mg, (m, $1) => '  ' + chalk.yellow($1));
         const more = `\nFor examples:
   vusion add block
-  vusion add block @cloud-ui/s-basic-form.vue ./src/something/create.vue
+  vusion add block @cloud-ui/s-basic-form.vue ./src/some/path/create.vue
   vusion add module
   vusion add module ./templates/module2 ./src/views/dashboard
-  vusion add page
 `;
+        //   vusion add page
         const result = colored + more;
         return cb ? cb(result) : result;
     });
@@ -55,7 +55,7 @@ async function add(args) {
             type: 'list',
             message: 'Which kind of material do you want to add?',
             default: 'block',
-            choices: ['block', 'module', 'page'],
+            choices: ['block', 'module'], // , 'page'],
         }]);
 
         materialType = type;
@@ -65,40 +65,72 @@ async function add(args) {
         const options = {
             source: program.args[1],
             target: program.args[2],
-            name: program.name,
+            name: program.rename,
             title: program.title,
         };
 
         // Ask questions
         if (!program.skip) {
             if (!options.source) {
-                inquirer.prompt([{
+                const { source } = await inquirer.prompt([{
                     name: 'source',
                     type: 'input',
                     message: 'Please specify a module template path. Default is',
                     default: './templates/module',
-                    // when: options.
-                }, {
+                }]);
+                options.source = source;
+            }
+
+            if (!options.target) {
+                const { target } = await inquirer.prompt([{
                     name: 'target',
                     type: 'input',
-                    message: 'Please specify a module template path. Default is',
-                    default: './templates/module',
-                }]).then((result) => {
-                    console.log(result);
-                });
+                    message: 'Please specify target path. Default is',
+                    default: './src/views/dashboard',
+                }]);
+                options.target = target;
+            }
+
+            if (!options.name) {
+                const { name } = await inquirer.prompt([{
+                    name: 'name',
+                    type: 'input',
+                    message: 'Please input module name. Default is',
+                    default: 'module1',
+                }]);
+                options.name = name;
+            }
+
+            if (!options.title) {
+                const { title } = await inquirer.prompt([{
+                    name: 'title',
+                    type: 'input',
+                    message: 'Please input module title. Default is',
+                    default: '模块1',
+                }]);
+                options.title = title;
             }
         }
 
-        // Ask questions
-
-        // vms.addModule(options).then(() => {
-        //     console.log('Success!');
-        // });
+        console.info();
+        console.info(`✨ Adding module...`);
+        const spinner = ora(`This might take a while...`).start();
+        try {
+            await vms.addModule(options);
+            spinner.stop();
+            console.info();
+            logger.done(`Successfully added module ${chalk.yellow(options.name + ' (' + options.title + ')')}.`);
+        } catch (e) {
+            spinner.stop();
+            console.error();
+            logger.error(e);
+            process.exit(1);
+        }
     } else if (materialType === 'block') {
         const options = {
             source: program.args[1],
             target: program.args[2],
-            name: program.name,
+            name: program.rename,
         };
 
         // Ask questions
@@ -163,6 +195,9 @@ async function add(args) {
                 };
             }
 
+            const fileName = options.source.fileName = path.basename(options.source.name);
+            options.source.baseName = path.basename(fileName, path.extname(fileName));
+
             if (!options.target) {
                 const fileList = vfs.listAllFiles('', {
                     patterns: ['!node_modules'],
@@ -191,27 +226,55 @@ async function add(args) {
                 }]);
 
                 options.target = target;
+            }
 
-                console.info();
-                console.info(`The target vue file may be changed in the process. Make sure it saved in your editor.`);
-                const { ok } = await inquirer.prompt([{
-                    name: 'ok',
-                    type: 'confirm',
-                    message: `Confirm to continue?`,
+            if (!options.name) {
+                // const name = options.source.baseName;
+                // console.log(opt)
+                const dest = vutils.avoidSameName(path.resolve(options.target, 'blocks', options.source.fileName));
+
+                const { name } = await inquirer.prompt([{
+                    name: 'name',
+                    type: 'input',
+                    message: `Do you want to rename component? Default is`,
+                    default: path.basename(dest, '.vue'),
+                    filter(componentName) {
+                        let baseName = componentName.replace(/\.vue$/, '');
+                        if (componentName.includes('-'))
+                            componentName = vutils.kebab2Camel(baseName);
+                        else
+                            baseName = vutils.Camel2kebab(componentName);
+                        return baseName;
+                    },
                 }]);
+                options.name = name;
+            }
 
-                if (ok) {
-                    try {
-                        console.info();
-                        console.info(`✨  Adding block ${chalk.yellow(options.source.name)} in ${chalk.cyan(options.target)}`);
-                        const spinner = ora(` This might take a while...`).start();
-                        await vms.addBlock(options);
-                        spinner.stop();
-                        console.info();
-                        logger.done(`Successfully added block ${chalk.yellow(options.source.name)}.`);
-                    } catch (e) {
-                        console.error(e);
-                    }
+            console.info();
+            console.info(`The target vue file may be changed in the process. Make sure it saved in your editor.`);
+            const { ok } = await inquirer.prompt([{
+                name: 'ok',
+                type: 'confirm',
+                message: `Confirm to continue?`,
+            }]);
+
+            if (ok) {
+                console.info();
+                console.info(`✨ Adding block...`); // ${chalk.green(options.source.name)} in ${chalk.green(options.target)}`);
+                const spinner = ora(`This might take a while...`).start();
+                try {
+                    await vms.addBlock(options);
+                    spinner.stop();
+                    console.info();
+                    logger.done(`Successfully added block ${chalk.yellow(options.source.name)}.`);
+                } catch (e) {
+                    spinner.stop();
+                    console.error();
+                    if (e.response.data.error === '[not_found] document not found')
+                        logger.error(`Block ${chalk.cyan(options.source.name)} not found in ${chalk.cyan(options.source.registry)}`);
+                    else
+                        logger.error(e.response.data);
+                    process.exit(1);
                 }
             }
         }

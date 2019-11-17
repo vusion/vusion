@@ -4,5 +4,9 @@
         "browser": true,
         "node": true,
         "mocha": true
+    },
+    "rules": {
+        "new-cap": [0],
+        "camelcase": [0]
     }
 }
