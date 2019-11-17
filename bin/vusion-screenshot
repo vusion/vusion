@@ -1,0 +1,174 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const chalk = require('chalk');
+// const { fs: vfs, ms: vms } = require('vusion-api');
+// const inquirer = require('inquirer');
+// inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
+// inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
+// const fuzzy = require('fuzzy');
+const ora = require('ora');
+const logger = require('../lib/logger');
+const detect = require('detect-port');
+const imagemin = require('imagemin');
+const imageminMozjpeg = require('imagemin-mozjpeg');
+const imageminPngquant = require('imagemin-pngquant');
+const createServer = require('../lib/createServer');
+const getPuppeteer = require('../lib/getPuppeteer');
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+const cwd = process.cwd();
+const DEFAULT_PORT = 9600;
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('<url>')
+    .description(`Take a screenshot of a web page.
+For example:
+  vusion screenshot https://www.example.com
+`)
+    .option('-o, --output <output>', 'Output path')
+    .option('-s, --selector <selector>', 'Select a element through CSS selector')
+    .option('-d, --delay <delay>', 'Screenshot with a delay')
+    .option('-w, --width <width>', 'Viewport width')
+    .option('-h, --height <height>', 'Viewport height')
+    .option('--dsf <device-scale-factor>', 'Specify device scale factor (can be thought of as dpr). Defaults to 2', 2)
+    .parse(process.argv);
+
+/**
+ * Take a screenshot with local server
+ *
+ * @param {string} serverPath local server directory
+ * @param {number} port server port
+ * @param {string} targetUrl the target url
+ * @param {string} selector the target CSS selector
+ * @param {string} output output path
+ */
+async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, output, delay, viewport) {
+    if (targetUrl.startsWith('./'))
+        targetUrl = targetUrl.slice(2);
+    targetUrl = targetUrl ? `http://127.0.0.1:${port}${targetUrl}` : `http://127.0.0.1:${port}/public/index.html`;
+
+    const server = createServer(serverPath, port);
+    console.info(chalk.white(`Create local server with port ${port}`));
+    console.info(chalk.white(`The screenshot target url: ${targetUrl}`));
+
+    await screenshot(targetUrl, selector, output, delay, viewport);
+
+    server.close();
+}
+
+/**
+ * Take a screenshot of web page
+ *
+ * @param {string} url the target url
+ * @param {string} selector screenshot target CSS selector
+ * @param {string} output output path
+ */
+async function screenshot(url, selector, output, delay, viewport) {
+    // a terminal spinner
+    const spinner = ora('Screenshoting...').start();
+
+    try {
+        const puppeteer = await getPuppeteer();
+        // Start puppeteer
+        const browser = await puppeteer.launch();
+        // Create a new page
+        const page = await browser.newPage();
+
+        // Set page's viewport
+        page.setViewport(viewport);
+
+        // Visit the target url
+        await page.goto(url);
+
+        if (delay) {
+            await sleep(delay);
+        }
+
+        // Screenshot a element through CSS selector;
+        if (selector) {
+            const el = await page.$(selector);
+
+            if (!el) {
+                throw Error(`Could not find element that matches selector: ${selector}.`);
+            }
+
+            await el.screenshot({ path: output });
+        } else {
+        // Screenshot full page
+            await page.screenshot({ path: output });
+        }
+
+        const outputDir = path.dirname(output);
+        // minify screenshot
+        await minifyImg(output, outputDir);
+
+        // close chromium
+        await browser.close();
+
+        spinner.stopAndPersist();
+        console.info();
+        logger.done('Screenshot success!');
+        console.info(`       Output path: ${chalk.cyan(output)}`);
+    } catch (err) {
+        spinner.stopAndPersist();
+        console.info();
+        logger.error('Screenshot fail!');
+
+        // chromium not download error
+        // stdout reinstall puppeteer tips.
+        if (err.message === 'Chromium revision is not downloaded. Run "npm install" or "yarn install"') {
+            console.info(chalk.red('\n\nPuppeteer Install fail. \nPlease install puppeteer using the following commands:'));
+            console.info(chalk.white('\n  npm uninstall puppeteer -g'));
+            console.info(chalk.white('\n  PUPPETEER_DOWNLOAD_HOST=https://storage.googleapis.com.cnpmjs.org npm i puppeteer -g --registry=https://registry.npm.taobao.org'));
+            console.info(chalk.white('\n  screenshot -u http://www.example.com\n'));
+        } else {
+            console.error(err);
+        }
+        process.exit(1);
+    }
+}
+
+/**
+ * minify an image
+ *
+ * @param {String} imgPath
+ * @param {*} outputDir output dir
+ * @returns
+ */
+function minifyImg(imgPath, outputDir) {
+    return imagemin([imgPath], outputDir, {
+        plugins: [imageminMozjpeg(), imageminPngquant()],
+    });
+}
+
+async function exec() {
+    const { selector, delay } = program;
+    const url = program.args[0];
+    const output = program.output || path.join(cwd, 'screenshot.png');
+
+    if (!url) {
+        console.info(chalk.red('The url is required!'));
+        program.help();
+    }
+
+    const local = !url.startsWith('http');
+    const viewport = {
+        width: program.width || 1180,
+        height: program.height || 600,
+        deviceScaleFactor: program.deviceScaleFactor || 2,
+    };
+
+    if (local) {
+        const port = await detect(DEFAULT_PORT);
+        await screenshotWithLocalServer(cwd, port, url, selector, output, delay, viewport);
+    } else {
+        await screenshot(url, selector, output, delay, viewport);
+    }
+}
+
+exec();
