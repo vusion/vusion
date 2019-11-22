@@ -17,7 +17,7 @@ const logger = require('../lib/logger');
 const program = require('commander');
 program
     .usage('<type> [source] [target]')
-    .description(`Add a kind of material: ${chalk.yellow('block')}, ${chalk.yellow('module')}`) // or ${chalk.yellow('page')}`)
+    .description(`Add a kind of material: ${chalk.yellow('block')}`) // or ${chalk.yellow('page')}`)
     .option('--name <rename>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
     .option('--skip', 'Skip questions and execute command quickly');
@@ -31,9 +31,9 @@ program.outputHelp = function (cb) {
         const more = `\nFor examples:
   vusion add block
   vusion add block @cloud-ui/s-basic-form.vue ./src/some/path/create.vue
-  vusion add module
-  vusion add module ./templates/module2 ./src/views/dashboard
 `;
+        //   vusion add module
+        //   vusion add module ./templates/module2 ./src/views/dashboard
         //   vusion add page
         const result = colored + more;
         return cb ? cb(result) : result;

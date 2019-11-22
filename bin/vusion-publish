@@ -77,7 +77,6 @@ async function publish() {
             }));
             logger.done('Package registered in vusion platform.');
         }
-        console.info();
 
         logger.done('Successfully published!');
     } catch (e) {
@@ -87,10 +86,12 @@ async function publish() {
         process.exit(1);
     }
 
+    console.info();
     await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
     await exec(`git push`);
     await exec(`git tag ${info}`);
     await exec(`git push origin ${info}`);
+    console.info();
 
     logger.done('git branch and tag pushed!');
 }

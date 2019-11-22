@@ -26,8 +26,8 @@ program
     .version(pkg.version)
     // Project commands
     // .command('init <material-type> <material-name>', 'Initialize a material')
-    .command('add <type> [source] [target]', `Add a kind of material: ${chalk.yellow('block')}, ${chalk.yellow('module')}`)
-    .command('remove <type> [source] [target]', `Remove a kind of material: ${chalk.yellow('block')}, ${chalk.yellow('module')}`)
+    .command('add <type> [source] [target]', `Add a kind of material: ${chalk.yellow('block')}`)
+    .command('remove <type> [source] [target]', `Remove a kind of material: ${chalk.yellow('block')}`)
     .command('publish <version>', 'Publish a new version')
     .command('ghpages', 'Push public directory to gh-pages')
     .command('screenshot', 'Take a screenshot of a web page');

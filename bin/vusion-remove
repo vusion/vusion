@@ -16,7 +16,7 @@ const logger = require('../lib/logger');
 const program = require('commander');
 program
     .usage('<type> [path]')
-    .description(`Remove a material: ${chalk.yellow('block')}, ${chalk.yellow('module')}`) // or ${chalk.yellow('page')}`)
+    .description(`Remove a material: ${chalk.yellow('block')}`) // , ${chalk.yellow('module')}`) // or ${chalk.yellow('page')}`)
     .option('--name <rename>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
     .option('--skip', 'Skip questions and execute command quickly');
@@ -30,9 +30,9 @@ program.outputHelp = function (cb) {
         const more = `\nFor examples:
   vusion remove block
   vusion remove block ./src/something/create.vue/blocks/s-basic-form.vue
-  vusion remove module
-  vusion remove module ./src/views/dashboard/nvm
 `;
+        //   vusion remove module
+        //   vusion remove module ./src/views/dashboard/nvm
         const result = colored + more;
         return cb ? cb(result) : result;
     });
