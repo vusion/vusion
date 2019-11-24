@@ -1,26 +1,5 @@
 #!/usr/bin/env node
 
-const shell = require('shelljs');
+const exec = require('../lib/exec');
 
-/**
- * Parse Commands
- */
-const program = require('commander');
-program
-    .usage('<project-type> <project-name>')
-    .parse(process.argv);
-
-/**
- * Execute Task
- */
-const projectType = program.args[0];
-const projectName = program.args[1] || 'my-project';
-
-const URL = `https://github.com/vusion-templates/${projectType}.git`;
-if (shell.exec(`git clone -b master --depth 1 ${URL} ${projectName}`).code) {
-    console.error('[ERROR] Unknown template!');
-    process.exit(1);
-}
-shell.rm('-rf', `${projectName}/.git`);
-
-console.info(`[SUCCESS] "${projectName}" has been initialized.`);
+exec('node_modules/create-vusion/bin/vusion', process.argv.slice(2));

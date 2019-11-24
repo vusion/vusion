@@ -25,7 +25,7 @@ program
     .usage('<command> [options]')
     .version(pkg.version)
     // Project commands
-    // .command('init <material-type> <material-name>', 'Initialize a material')
+    .command('init <type> <name> [dir]', 'Initialize a material')
     .command('add <type> [source] [target]', `Add a kind of material: ${chalk.yellow('block')}`)
     .command('remove <type> [source] [target]', `Remove a kind of material: ${chalk.yellow('block')}`)
     .command('publish <version>', 'Publish a new version')
