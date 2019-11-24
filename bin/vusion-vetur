@@ -11,7 +11,7 @@ const logger = require('../lib/logger');
 const program = require('commander');
 program
     .usage('[directory]')
-    .description(`Generate final readable README.md from api.yaml and docs`)
+    .description(`Generate tags.json and attributes.json for Vetur`)
     .parse(process.argv);
 
 const directory = program.args[0] || '';
@@ -22,15 +22,21 @@ if (!fs.existsSync(absolutePath))
 if (!fs.statSync(absolutePath).isDirectory())
     console.error(`"${absolutePath}" is not a directory!`);
 
-Promise.all(vusion.fs.listAllFiles(directory, {
+const vetur = {
+    tags: {},
+    attributes: {},
+};
+vusion.fs.listAllFiles(directory, {
     patterns: ['!**/node_modules'],
     includes: /api\.yaml$/,
-}).map(async (filePath) => {
-    const raw = await fs.readFile(filePath, 'utf8');
+}).forEach((filePath) => {
+    const raw = fs.readFileSync(filePath, 'utf8');
     const apiHandler = new vusion.fs.APIHandler(raw, path.resolve(filePath));
-    const result = await apiHandler.markdown();
+    const partial = apiHandler.toVetur();
+    Object.assign(vetur.tags, partial.tags);
+    Object.assign(vetur.attributes, partial.attributes);
+});
 
-    const readmePath = path.join(filePath, '../README.md');
-    await fs.writeFile(readmePath, result);
-    logger.done(readmePath);
-}));
+fs.outputFileSync(path.resolve(process.cwd(), 'vetur/tags.json'), JSON.stringify(vetur.tags, null, 2));
+fs.outputFileSync(path.resolve(process.cwd(), 'vetur/attributes.json'), JSON.stringify(vetur.attributes, null, 2));
+logger.done('Generated vetur tags.json and attributes.json');

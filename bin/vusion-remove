@@ -19,7 +19,7 @@ program
     .description(`Remove a material: ${chalk.yellow('block')}`) // , ${chalk.yellow('module')}`) // or ${chalk.yellow('page')}`)
     .option('--name <rename>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
-    .option('--skip', 'Skip questions and execute command quickly');
+    .option('-q, --quickly', 'Skip questions and execute command quickly');
 
 const oldOutputHelp = program.outputHelp;
 program.outputHelp = function (cb) {
@@ -62,15 +62,15 @@ async function remove(args) {
             name: program.rename,
         };
 
-        if (!options.target) {
-            const { target } = await inquirer.prompt([{
-                name: 'target',
-                type: 'input',
-                message: 'Please specify target path. Default is',
-                default: './src/views/dashboard',
-            }]);
-            options.target = target;
-        }
+        // if (!options.target) {
+        //     const { target } = await inquirer.prompt([{
+        //         name: 'target',
+        //         type: 'input',
+        //         message: 'Please specify target path. Default is',
+        //         default: './src/views/dashboard',
+        //     }]);
+        //     options.target = target;
+        // }
 
         if (!options.name) {
             const { name } = await inquirer.prompt([{
