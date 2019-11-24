@@ -1,0 +1,36 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const vusion = require('vusion-api');
+const logger = require('../lib/logger');
+const genREADME = require('../lib/genREADME');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('[directory]')
+    .description(`Generate final readable README.md from api.yaml and docs`)
+    .parse(process.argv);
+
+const directory = program.args[0] || '';
+const absolutePath = path.resolve(process.cwd(), directory);
+
+if (!fs.existsSync(absolutePath))
+    console.error(`Cannot find directory: ${absolutePath}`);
+if (!fs.statSync(absolutePath).isDirectory())
+    console.error(`"${absolutePath}" is not a directory!`);
+
+vusion.fs.listAllFiles(directory, {
+    patterns: ['!**/node_modules'],
+    includes: /api\.yaml$/,
+}).forEach((filePath) => {
+    const content = genREADME(filePath);
+
+    const readmePath = path.join(filePath, '../README.md');
+    fs.writeFileSync(readmePath, content);
+    logger.done(readmePath);
+});
+

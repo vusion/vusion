@@ -9,15 +9,16 @@ const ghpages = require('gh-pages');
  */
 const program = require('commander');
 program
-    .option('-p, --path <path>', 'Alias of directory')
+    .usage('[directory]')
+    .description(`Push a directory to gh-pages. Defaults to 'public'`)
     .parse(process.argv);
 
-let directory = program.args[0] || program.path || 'public';
+let directory = program.args[0] || 'public';
 if (directory)
     directory = path.resolve(process.cwd(), directory);
 
 if (!fs.existsSync(directory))
-    console.error(`Cannot find "${directory}" directory!`);
+    console.error(`Cannot find directory: ${directory}`);
 if (!fs.statSync(directory).isDirectory())
     console.error(`"${directory}" is not a directory!`);
 

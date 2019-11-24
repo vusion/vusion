@@ -61,6 +61,7 @@ async function publish() {
         await exec(npmCmds.join(' ')); // prepublishOnly
 
         console.info();
+        logger.done('Successfully published!');
 
         if (pkg.vusion && pkg.vusion.type === 'block') {
             await vms.publishBlock(Object.assign({}, pkg, {
@@ -75,25 +76,34 @@ async function publish() {
                 team: pkg.vusion.team,
                 dependencies: JSON.stringify(pkg.dependencies),
             }));
-            logger.done('Package registered in vusion platform.');
+            logger.done('Registered package on vusion platform.');
         }
-
-        logger.done('Successfully published!');
     } catch (e) {
         console.info();
-        logger.error('Publish failed!');
+        logger.error('Failed to publish!');
         e && console.error(e.response.data);
         process.exit(1);
     }
 
     console.info();
-    await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
-    await exec(`git push`);
-    await exec(`git tag ${info}`);
-    await exec(`git push origin ${info}`);
-    console.info();
+    try {
+        await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
+    } catch (e) {}
 
-    logger.done('git branch and tag pushed!');
+    let pushAndTag = true;
+    try {
+        await exec(`git push`);
+    } catch (e) {
+        pushAndTag = false;
+    }
+    try {
+        await exec(`git tag ${info}`);
+        await exec(`git push origin ${info}`);
+    } catch (e) {
+        pushAndTag = false;
+    }
+    console.info();
+    pushAndTag && logger.done(`Pushed git branch and tag ${info}!`);
 }
 
 publish();

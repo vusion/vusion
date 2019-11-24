@@ -20,7 +20,7 @@ program
     .description(`Add a kind of material: ${chalk.yellow('block')}`) // or ${chalk.yellow('page')}`)
     .option('--name <rename>', 'Rename material in target path')
     .option('--title <title>', 'Set title to replace material content')
-    .option('--skip', 'Skip questions and execute command quickly');
+    .option('-q, --quickly', 'Skip questions and execute command quickly');
 
 const oldOutputHelp = program.outputHelp;
 program.outputHelp = function (cb) {
@@ -70,7 +70,7 @@ async function add(args) {
         };
 
         // Ask questions
-        if (!program.skip) {
+        if (!program.quickly) {
             if (!options.source) {
                 const { source } = await inquirer.prompt([{
                     name: 'source',
@@ -134,7 +134,7 @@ async function add(args) {
         };
 
         // Ask questions
-        if (!program.skip) {
+        if (!program.quickly) {
             if (!options.source) {
                 let sourceType = config.default_registry;
 
@@ -200,7 +200,7 @@ async function add(args) {
 
             if (!options.target) {
                 const fileList = vfs.listAllFiles('', {
-                    patterns: ['!node_modules'],
+                    patterns: ['!**/node_modules'],
                     includes: /\.vue$/,
                 }).sort();
                 const { target } = await inquirer.prompt([{
