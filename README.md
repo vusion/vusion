@@ -30,9 +30,8 @@ npm install -g vusion
 ## Quick Start
 
 ``` shell
-vusion init app my-app
-npm install
-vusion dev
+vusion init <dir> [templateName]
+npm run dev
 ```
 
 ## Commands
@@ -40,9 +39,14 @@ vusion dev
 - `vusion help`: Show help of all commands
 - `vusion -V, --version`: Show the version of current CLI
 
-- `vusion init <project-type> <project-name>`: Initalize a vusion project
-- `vusion publish <version>`: Publish a new version
-- `vusion ghpages [directory]`: Push output directory to gh-pages. If the directory is not specfied, it will be webpack output path
-    - `-c, --config-path <path>`: Vusion config path
-- `vusion list [directory]`: List all components in a directory. If the directory is not specfied, it will be process.cwd()
-- `vusion transform <vue-path>`: Transform Vue component between singlefile and multifile pattern
+- `init <type> <name> [dir]`: Initialize a material
+- `add <type> [source] [target]`: Add a kind of material: block
+- `remove <type> [source] [target]`: Remove a kind of material: block
+- `publish <version>`: Publish a new version
+- `screenshot`: Take a screenshot of a web page
+- `ghpages`: Push a directory to gh-pages
+- `readme`: Generate final readable README.md from api.yaml and docs
+- `vetur`: Generate tags.json and attributes.json for Vetur
+- `help [cmd]`: display help for `[cmd]`
+
+Run `vusion <command> --help` for detailed usage of given command.

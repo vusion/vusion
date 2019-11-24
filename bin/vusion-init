@@ -2,4 +2,4 @@
 
 const exec = require('../lib/exec');
 
-exec('node_modules/create-vusion/bin/vusion', process.argv.slice(2));
+exec('node', [require.resolve('create-vusion/bin/vusion')].concat(process.argv.slice(2)));
