@@ -15,8 +15,8 @@ list                            List all config
 set <key> <value>               For example: vusion config set access_token f2224e629a7e24423e6b1bf6
 get <key>                       For example: vusion config get access_token
 delete <key>                    For example: vusion config delete default_registry
-add registry <alias> <url>      For example: vusion config add registry cnpm https://registry.npm.taobao.org
-remove registry <alias>         For example: vusion config remove registry cnpm
+add registry <manager> <url>    For example: vusion config add registry cnpm https://registry.npm.taobao.org
+remove registry <manager>       For example: vusion config remove registry cnpm
 edit                            Use vim to edit config directly
 `)
     .parse(process.argv);
@@ -31,7 +31,7 @@ if (action === 'set') {
     configurator.save();
     logger.done(key + '=' + value);
 } else if (action === 'get') {
-    logger.info(config[key]);
+    console.info(config[key]);
 } else if (action === 'delete') {
     delete config[key];
     configurator.save();
@@ -58,4 +58,3 @@ if (action === 'set') {
     logger.error('Unknown action!');
     process.exit(1);
 }
-

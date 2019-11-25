@@ -39,6 +39,7 @@ For example:
     .option('-w, --width <width>', 'Viewport width')
     .option('-h, --height <height>', 'Viewport height')
     .option('--dsf <device-scale-factor>', 'Specify device scale factor (can be thought of as dpr). Defaults to 2', 2)
+    .option('--package [package-path]', 'Autoset package.json screenshots')
     .parse(process.argv);
 
 /**
@@ -75,6 +76,23 @@ async function screenshot(url, selector, elNumber, output, delay, viewport) {
     // a terminal spinner
     const spinner = ora('Screenshoting...').start();
 
+    let pkg;
+    let pkgPath;
+    if (program.package) {
+        pkgPath = typeof program.package === 'string' ? program.package : path.resolve(process.cwd(), 'package.json');
+        pkg = require(pkgPath);
+        if (!pkg.vusion)
+            pkg.vusion = {};
+        pkg.vusion.screenshots = [];
+    }
+
+    function writeIntoPackage(relativePath) {
+        const unpkgHost = 'https://unpkg.com';
+        const finalPath = `${unpkgHost}/${pkg.name}@${pkg.version}/${relativePath}`;
+        // if (!screenshots.includes(finalPath))
+        pkg.vusion.screenshots.push(finalPath);
+    }
+
     try {
         const puppeteer = await getPuppeteer();
         // Start puppeteer
@@ -95,19 +113,40 @@ async function screenshot(url, selector, elNumber, output, delay, viewport) {
         }
 
         // Screenshot a element through CSS selector;
-        if (selector) {
-            let el;
-            if (elNumber) {
-                el = (await page.$$(selector))[elNumber];
-            } else {
-                el = await page.$(selector);
-            }
-
-            if (!el) {
+        if (selector && elNumber === undefined) {
+            const el = await page.$(selector);
+            if (!el)
                 throw Error(`Could not find element that matches selector: ${selector}.`);
+            await el.screenshot({ path: output });
+        } else if (selector && typeof elNumber === 'number') {
+            const el = (await page.$$(selector))[elNumber];
+            if (!el)
+                throw Error(`Could not find element that matches selector: ${selector}.`);
+            await el.screenshot({ path: output });
+        } else if (selector && elNumber === true) {
+            elNumber = 0;
+            let el = (await page.$$(selector))[elNumber];
+            /* eslint-disable no-await-in-loop */
+            while (el) {
+                output = path.join(output, '../' + elNumber + '.png');
+                await el.screenshot({ path: output });
+
+                const outputDir = path.dirname(output);
+                // minify screenshot
+                await minifyImg(output, outputDir);
+                console.info(`       Output path: ${chalk.cyan(output)}`);
+                pkg && writeIntoPackage(output);
+
+                el = (await page.$$(selector))[++elNumber];
             }
 
-            await el.screenshot({ path: output });
+            // close chromium
+            await browser.close();
+            spinner.stopAndPersist();
+            console.info();
+            logger.done('Screenshot success!');
+            pkg && await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            return;
         } else {
         // Screenshot full page
             await page.screenshot({ path: output });
@@ -124,6 +163,8 @@ async function screenshot(url, selector, elNumber, output, delay, viewport) {
         console.info();
         logger.done('Screenshot success!');
         console.info(`       Output path: ${chalk.cyan(output)}`);
+        pkg && writeIntoPackage(output);
+        pkg && await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     } catch (err) {
         spinner.stopAndPersist();
         console.info();
@@ -159,22 +200,6 @@ function minifyImg(imgPath, outputDir) {
 async function exec() {
     let { selector, delay } = program;
     const url = program.args[0];
-
-    let elNumber;
-    if (!selector && program.codeExample !== undefined) {
-        selector = `[class^="u-code-example_demo_"]`;
-        elNumber = isNaN(parseInt(program.codeExample)) ? 0 : program.codeExample;
-    }
-
-    let output = program.output;
-    if (!output) {
-        if (elNumber !== undefined) {
-            fs.ensureDirSync('screenshots');
-            output = `screenshots/${elNumber}.png`;
-        } else
-            output = 'screenshot.png';
-    }
-
     if (!url) {
         console.info(chalk.red('The url is required!'));
         program.help();
@@ -186,6 +211,21 @@ async function exec() {
         height: program.height || 600,
         deviceScaleFactor: program.deviceScaleFactor || 2,
     };
+
+    let elNumber;
+    if (!selector && program.codeExample !== undefined) {
+        selector = `[class^="u-code-example_demo_"]`;
+        elNumber = isNaN(parseInt(program.codeExample)) ? true : parseInt(program.codeExample);
+    }
+
+    let output = program.output;
+    if (!output) {
+        if (elNumber !== undefined) {
+            fs.ensureDirSync('screenshots');
+            output = `screenshots/${elNumber}.png`;
+        } else
+            output = 'screenshot.png';
+    }
 
     if (local) {
         // const port = await detect(DEFAULT_PORT);

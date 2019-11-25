@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const fs = require('fs');
+const fs = require('fs-extra');
 const path = require('path');
 const semver = require('semver');
 const chalk = require('chalk');
@@ -23,13 +23,24 @@ const pkg = require(pkgPath);
 const program = require('commander');
 program
     .usage('<version>')
-    .option('-n, --npm <npm>', 'Use other npm to publish like cnpm', 'npm')
     .option('--tag <tag>', 'Registers the published package with the given tag')
     .option('--access <public|restricted>', 'Tells the registry whether this package should be published as public or restricted.')
+    .option('--manager <manager>', 'Change publish manager. For example: --manager cnpm')
+    .option('--registry <url>', 'Use custom registry if manager default registry is not you want. For example: --registry https://registry.npm.taobao.org')
     .parse(process.argv);
 
 const name = pkg.name;
 const version = semver.clean(program.args[0] || pkg.version);
+const config = vusion.rc.configurator.load();
+
+const manager = program.manager || config.publish_manager;
+const registry = program.registry || config.registries[config.publish_manager];
+
+const ACCESS_MAP = {
+    public: 1,
+    private: 2,
+    team: 3,
+};
 
 async function publish() {
     const message = `The new version of ${chalk.yellow(name)} is ${chalk.yellow(version)}`;
@@ -44,44 +55,73 @@ async function publish() {
         return;
 
     pkg.version = version;
-    fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2) + '\n', 'utf-8');
 
-    const npmCmds = [`${program.npm} publish`];
+    const npmCmds = [`${manager} publish`];
     if (program.tag)
         npmCmds.push(`--tag ${program.tag}`);
+
     if (program.access)
         npmCmds.push(`--access ${program.access}`);
     else if (pkg.name.includes('/'))
         npmCmds.push(`--access public`);
 
+    if (program.registry)
+        npmCmds.push(`--registry ${registry}`);
+
     const info = name.endsWith('.vue') ? `${name}@${version}` : `v${version}`;
 
     try {
-        await exec('git add package.json');
-        await exec(npmCmds.join(' ')); // prepublishOnly
+        if (pkg.vusion && (pkg.vusion.type === 'component' || pkg.vusion.type === 'block')) {
+            await vusion.ms.getBlocks(); // 判断网络是否 OK
 
-        console.info();
-        logger.done('Successfully published!');
+            const unpkgHost = 'https://unpkg.com';
+            // if (registry.starsWith('https://registry.npmjs.org'))
+            pkg.homepage = `${unpkgHost}/${pkg.name}@${pkg.version}/public/index.html`;
 
-        if (pkg.vusion && pkg.vusion.type === 'block') {
-            await vusion.ms.publishBlock(Object.assign({}, pkg, {
-                labels: pkg.keywords,
+            let repository = pkg.repository;
+            if (typeof pkg.repository === 'object')
+                repository = repository.url.replace(/\.git$/, '') + (pkg.repository.directory ? '/tree/master/' + pkg.repository.directory : '');
+
+            await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            await exec('git add package.json');
+            await exec(npmCmds.join(' ')); // prepublishOnly
+
+            console.info();
+            logger.done('Successfully published!');
+
+            let publishFunc;
+            if (pkg.vusion.type === 'component')
+                publishFunc = vusion.ms.publishComponent;
+            else if (pkg.vusion.type === 'block')
+                publishFunc = vusion.ms.publishBlock;
+
+            await publishFunc(Object.assign({}, pkg, {
+                // homepage,
+                repository,
+                labels: pkg.keywords.join(','),
                 title: pkg.vusion.title,
                 category: pkg.vusion.category,
-                access: pkg.vusion.access === 'public' ? 1 : 1,
+                access: ACCESS_MAP[pkg.vusion.access],
                 screenshots: pkg.vusion.screenshots.join(','),
                 base: pkg.vusion.base || 'vue',
-                ui: pkg.vusion.base || 'cloud-ui',
-                registry: 'https://registry.npmjs.org',
+                ui: pkg.vusion.ui || 'cloud-ui.vusion',
+                registry,
                 team: pkg.vusion.team,
                 dependencies: JSON.stringify(pkg.dependencies),
             }));
             logger.done('Registered package on vusion platform.');
+        } else {
+            await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
+            await exec('git add package.json');
+            await exec(npmCmds.join(' ')); // prepublishOnly
+
+            console.info();
+            logger.done('Successfully published!');
         }
     } catch (e) {
         console.info();
         logger.error('Failed to publish!');
-        e && console.error(e.response.data);
+        e && console.error(e.response ? e.response.data : e);
         process.exit(1);
     }
 
