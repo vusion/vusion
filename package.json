@@ -1,7 +1,7 @@
 {
   "name": "vusion",
   "description": "CLI for Vusion Projects, including Application and UI Library.",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "author": "Rainfore <rainforest92@126.com>",
   "bin": {
     "vusion": "bin/vusion"
