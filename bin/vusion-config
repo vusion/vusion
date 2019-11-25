@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 const path = require('path');
+const logger = require('../lib/logger');
+const exec = require('../lib/exec');
 
 /**
  * Parse Commands
@@ -8,32 +10,52 @@ const path = require('path');
 const program = require('commander');
 program
     .usage('<action> <key> <value>')
-    .description(`Configure CLI options
-set <key> <value>
-add registry <key> <value>
-remove registry <key> <value>
+    .description(`Configure CLI options:
+list                            List all config
+set <key> <value>               For example: vusion config set access_token f2224e629a7e24423e6b1bf6
+get <key>                       For example: vusion config get access_token
+delete <key>                    For example: vusion config delete default_registry
+add registry <alias> <url>      For example: vusion config add registry cnpm https://registry.npm.taobao.org
+remove registry <alias>         For example: vusion config remove registry cnpm
+edit                            Use vim to edit config directly
 `)
     .parse(process.argv);
-
-if (program.args.length < 3) {
-    console.error('Require more arguments!');
-    process.exit(1);
-}
 
 const configurator = require('../lib/configurator');
 const config = configurator.load();
 
-const [action, key, value] = program.args;
+const [action, key, value, url] = program.args;
 
-if (action === 'set')
+if (action === 'set') {
     config[key] = value;
-else if (action === 'add') {
-    if (!Array.isArray(config[key]))
-        config[key] = [];
-    config[key].push(value);
+    configurator.save();
+    logger.done(key + '=' + value);
+} else if (action === 'get') {
+    logger.info(config[key]);
+} else if (action === 'delete') {
+    delete config[key];
+    configurator.save();
+    logger.done('Deleted key ' + key);
+} else if (action === 'add') {
+    if (key === 'registry') {
+        config.registries = config.registries || {};
+        config.registries[value] = url;
+        configurator.save();
+        logger.done(value + '=' + url);
+    }
 } else if (action === 'remove') {
-    const index = config[key].indexOf(value);
-    ~index && config[key].splice(index, 1);
+    if (key === 'registry') {
+        config.registries = config.registries || {};
+        delete config.registries[value];
+        configurator.save();
+        logger.done('Remove registry ' + value);
+    }
+} else if (action === 'list') {
+    console.info(configurator.yaml);
+} else if (action === 'edit') {
+    exec('vi', [configurator.rcPath]);
+} else {
+    logger.error('Unknown action!');
+    process.exit(1);
 }
 
-configurator.save();
