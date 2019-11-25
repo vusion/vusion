@@ -1,9 +1,0 @@
-@extend;
-
-.root {
-    color: black;
-}
-
-.root:hover {
-    color: purple;
-}
