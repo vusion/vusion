@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const { fs: vusionFS } = require('vusion-api');
+const vusion = require('vusion-api');
 
 /**
  * Parse Commands
@@ -20,7 +20,7 @@ if (materialType !== 'component' && materialType !== 'block')
 
 const materialName = program.args[1] || 'u-sample';
 
-vusionFS.createMultiFilePackage(process.cwd(), materialName).then((dest) => {
+vusion.fs.createMultiFilePackage(process.cwd(), materialName).then((dest) => {
     console.info('Success! You can run serveral commands:');
     console.info('Start the development server:');
     console.info('    cd ' + path.relative(process.cwd(), dest));

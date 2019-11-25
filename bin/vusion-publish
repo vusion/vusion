@@ -6,7 +6,7 @@ const semver = require('semver');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
 const logger = require('../lib/logger');
-const { fs: vfs, ms: vms, utils: vutils } = require('vusion-api');
+const vusion = require('vusion-api');
 const exec = require('../lib/exec');
 
 const pkgPath = path.resolve(process.cwd(), 'package.json');
@@ -64,7 +64,7 @@ async function publish() {
         logger.done('Successfully published!');
 
         if (pkg.vusion && pkg.vusion.type === 'block') {
-            await vms.publishBlock(Object.assign({}, pkg, {
+            await vusion.ms.publishBlock(Object.assign({}, pkg, {
                 labels: pkg.keywords,
                 title: pkg.vusion.title,
                 category: pkg.vusion.category,

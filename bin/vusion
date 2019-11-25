@@ -28,6 +28,7 @@ program
     .command('init <type> <name> [dir]', 'Initialize a material')
     .command('add <type> [source] [target]', `Add a kind of material: ${chalk.yellow('block')}`)
     .command('remove <type> [source] [target]', `Remove a kind of material: ${chalk.yellow('block')}`)
+    .command('config <action> <key> [value]', 'Configure CLI options')
     .command('publish <version>', 'Publish a new version')
     .command('screenshot', 'Take a screenshot of a web page')
     .command('ghpages', 'Push a directory to gh-pages')

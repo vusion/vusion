@@ -1,22 +1,39 @@
 #!/usr/bin/env node
 
 const path = require('path');
-const { fs: vusionFS } = require('vusion-api');
 
 /**
  * Parse Commands
  */
 const program = require('commander');
 program
-    .usage('<cmd> <registry>')
+    .usage('<action> <key> <value>')
+    .description(`Configure CLI options
+set <key> <value>
+add registry <key> <value>
+remove registry <key> <value>
+`)
     .parse(process.argv);
 
-/**
- * Execute Task
- */
-const materialType = program.args[0];
-if (materialType !== 'component' && materialType !== 'block')
-    throw new Error('Unsupport material type!');
+if (program.args.length < 3) {
+    console.error('Require more arguments!');
+    process.exit(1);
+}
 
-const materialName = program.args[1] || 'u-sample';
+const configurator = require('../lib/configurator');
+const config = configurator.load();
 
+const [action, key, value] = program.args;
+
+if (action === 'set')
+    config[key] = value;
+else if (action === 'add') {
+    if (!Array.isArray(config[key]))
+        config[key] = [];
+    config[key].push(value);
+} else if (action === 'remove') {
+    const index = config[key].indexOf(value);
+    ~index && config[key].splice(index, 1);
+}
+
+configurator.save();

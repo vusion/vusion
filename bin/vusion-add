@@ -3,7 +3,7 @@
 const path = require('path');
 const chalk = require('chalk');
 const fs = require('fs-extra');
-const { fs: vfs, ms: vms, utils: vutils } = require('vusion-api');
+const vusion = require('vusion-api');
 const inquirer = require('inquirer');
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
@@ -116,7 +116,7 @@ async function add(args) {
         console.info(`✨ Adding module...`);
         const spinner = ora(`This might take a while...`).start();
         try {
-            await vms.addModule(options);
+            await vusion.ms.addModule(options);
             spinner.stop();
             console.info();
             logger.done(`Successfully added module ${chalk.yellow(options.name + ' (' + options.title + ')')}.`);
@@ -154,7 +154,7 @@ async function add(args) {
 
                 // if (registry.endsWith('npm')) {
                 const spinner = ora('Loading blocks...').start();
-                let blocks = await vms.getBlocks();
+                let blocks = await vusion.ms.getBlocks();
                 blocks = blocks.map((block) => {
                     let name = block.name + ' ' + chalk.yellow(`(${block.title})`);
                     if (block.description && block.description !== block.title)
@@ -199,7 +199,7 @@ async function add(args) {
             options.source.baseName = path.basename(fileName, path.extname(fileName));
 
             if (!options.target) {
-                const fileList = vfs.listAllFiles('', {
+                const fileList = vusion.fs.listAllFiles('', {
                     patterns: ['!**/node_modules'],
                     includes: /\.vue$/,
                 }).sort();
@@ -231,7 +231,7 @@ async function add(args) {
             if (!options.name) {
                 // const name = options.source.baseName;
                 // console.log(opt)
-                const dest = vutils.avoidSameName(path.resolve(options.target, 'blocks', options.source.fileName));
+                const dest = vusion.utils.avoidSameName(path.resolve(options.target, 'blocks', options.source.fileName));
 
                 const { name } = await inquirer.prompt([{
                     name: 'name',
@@ -241,9 +241,9 @@ async function add(args) {
                     filter(componentName) {
                         let baseName = componentName.replace(/\.vue$/, '');
                         if (componentName.includes('-'))
-                            componentName = vutils.kebab2Camel(baseName);
+                            componentName = vusion.utils.kebab2Camel(baseName);
                         else
-                            baseName = vutils.Camel2kebab(componentName);
+                            baseName = vusion.utils.Camel2kebab(componentName);
                         return baseName;
                     },
                 }]);
@@ -263,7 +263,7 @@ async function add(args) {
                 console.info(`✨ Adding block...`); // ${chalk.green(options.source.name)} in ${chalk.green(options.target)}`);
                 const spinner = ora(`This might take a while...`).start();
                 try {
-                    await vms.addBlock(options);
+                    await vusion.ms.addBlock(options);
                     spinner.stop();
                     console.info();
                     logger.done(`Successfully added block ${chalk.yellow(options.source.name)}.`);
@@ -284,7 +284,7 @@ async function add(args) {
 
     // const materialName = program.args[1] || 'u-sample';
 
-    // vfs.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
+    // vusion.fs.createMultiFilePackage(path.join(process.cwd(), 'src', materialType + 's'), materialName).then((dest) => {
     //     console.info('Success! You can run serveral commands:');
     //     console.info('Start the development server:');
     //     console.info('    cd ' + path.relative(process.cwd(), dest));

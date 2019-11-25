@@ -4,7 +4,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const nodeURL = require('url');
 const chalk = require('chalk');
-// const { fs: vfs, ms: vms } = require('vusion-api');
+// const vusion = require('vusion-api');
 // const inquirer = require('inquirer');
 // inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 // inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
