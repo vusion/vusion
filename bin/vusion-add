@@ -42,7 +42,7 @@ program.outputHelp = function (cb) {
 
 program.parse(process.argv);
 
-const configurator = require('../lib/configurator');
+const configurator = vusion.rc.configurator;
 const config = configurator.load();
 /**
  * Execute Command
@@ -136,21 +136,21 @@ async function add(args) {
         // Ask questions
         if (!program.quickly) {
             if (!options.source) {
-                let sourceType = config.default_registry;
+                const sourceType = config.download_registry;
 
-                if (!sourceType) {
-                    const sourceResult = await inquirer.prompt([{
-                        name: 'sourceType',
-                        type: 'list',
-                        message: `Select a source registry ${chalk.gray('(输入中英文均可搜索)')}:`,
-                        default: config.default_registry,
-                        choices: Object.keys(config.registries).map((key) => ({
-                            name: key + ' ' + chalk.gray(`(${config.registries[key]})`),
-                            value: key,
-                        })),
-                    }]);
-                    sourceType = sourceResult.sourceType;
-                }
+                // if (!sourceType) {
+                //     const sourceResult = await inquirer.prompt([{
+                //         name: 'sourceType',
+                //         type: 'list',
+                //         message: `Select a source registry ${chalk.gray('(输入中英文均可搜索)')}:`,
+                //         default: config.download_registry,
+                //         choices: Object.keys(config.registries).map((key) => ({
+                //             name: key + ' ' + chalk.gray(`(${config.registries[key]})`),
+                //             value: key,
+                //         })),
+                //     }]);
+                //     sourceType = sourceResult.sourceType;
+                // }
 
                 // if (registry.endsWith('npm')) {
                 const spinner = ora('Loading blocks...').start();
@@ -189,8 +189,8 @@ async function add(args) {
                 };
             } else {
                 options.source = {
-                    type: config.default_registry,
-                    registry: config.registries[config.default_registry],
+                    type: config.download_registry,
+                    registry: config.registries[config.download_registry],
                     name: options.source,
                 };
             }

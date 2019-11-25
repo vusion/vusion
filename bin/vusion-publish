@@ -15,7 +15,7 @@ if (!fs.existsSync(pkgPath)) {
     console.error('Please locate into a npm package directory.');
     process.exit(1);
 }
-const pkg = require(pkgPath);
+let pkg = require(pkgPath);
 
 /**
  * Parse Commands
@@ -27,6 +27,7 @@ program
     .option('--access <public|restricted>', 'Tells the registry whether this package should be published as public or restricted.')
     .option('--manager <manager>', 'Change publish manager. For example: --manager cnpm')
     .option('--registry <url>', 'Use custom registry if manager default registry is not you want. For example: --registry https://registry.npm.taobao.org')
+    .option('--skip-npm', 'Skip npm publish. Useful when package published but error happened')
     .parse(process.argv);
 
 const name = pkg.name;
@@ -84,10 +85,12 @@ async function publish() {
 
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             await exec('git add package.json');
-            await exec(npmCmds.join(' ')); // prepublishOnly
+            !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
 
             console.info();
             logger.done('Successfully published!');
+
+            pkg = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
 
             let publishFunc;
             if (pkg.vusion.type === 'component')
@@ -102,7 +105,7 @@ async function publish() {
                 title: pkg.vusion.title,
                 category: pkg.vusion.category,
                 access: ACCESS_MAP[pkg.vusion.access],
-                screenshots: pkg.vusion.screenshots.join(','),
+                screenshots: pkg.vusion.screenshots.slice(0, 12).join(','),
                 base: pkg.vusion.base || 'vue',
                 ui: pkg.vusion.ui || 'cloud-ui.vusion',
                 registry,
@@ -113,7 +116,7 @@ async function publish() {
         } else {
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             await exec('git add package.json');
-            await exec(npmCmds.join(' ')); // prepublishOnly
+            !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
 
             console.info();
             logger.done('Successfully published!');

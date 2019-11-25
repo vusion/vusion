@@ -3,6 +3,7 @@
 const path = require('path');
 const logger = require('../lib/logger');
 const exec = require('../lib/exec');
+const vusion = require('vusion-api');
 
 /**
  * Parse Commands
@@ -21,7 +22,7 @@ edit                            Use vim to edit config directly
 `)
     .parse(process.argv);
 
-const configurator = require('../lib/configurator');
+const configurator = vusion.rc.configurator;
 const config = configurator.load();
 
 const [action, key, value, url] = program.args;
