@@ -72,7 +72,7 @@ async function publish() {
     const info = name.endsWith('.vue') ? `${name}@${version}` : `v${version}`;
 
     try {
-        if (pkg.vusion && (pkg.vusion.type === 'component' || pkg.vusion.type === 'block')) {
+        if (pkg.vusion && (pkg.vusion.type === 'component' || pkg.vusion.type === 'block' || pkg.vusion.type === 'template')) {
             await vusion.ms.getBlocks(); // 判断网络是否 OK
 
             const unpkgHost = 'https://unpkg.com';
@@ -80,8 +80,21 @@ async function publish() {
             pkg.homepage = `${unpkgHost}/${pkg.name}@${pkg.version}/public/index.html`;
 
             let repository = pkg.repository;
+            if (!repository) {
+                throw new Error(`Please set repository. A string or an object. For example:
+"repository": "vusion/cloud-ui-materials"
+"repository": "https://github.com/vusion/cloud-ui-materials/tree/master/src/blocks/u-some-block.vue"
+"repository": {
+    "type": "git",
+    "url": "https://github.com/vusion/cloud-ui-materials.git",
+    "directory": "src/blocks/u-some-block.vue"
+}
+                `);
+            }
             if (typeof pkg.repository === 'object')
                 repository = repository.url.replace(/\.git$/, '') + (pkg.repository.directory ? '/tree/master/' + pkg.repository.directory : '');
+            else if (!pkg.repository.startsWith('http'))
+                repository = 'https://github.com/' + pkg.repository;
 
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             await exec('git add package.json');
@@ -97,6 +110,8 @@ async function publish() {
                 publishFunc = vusion.ms.publishComponent;
             else if (pkg.vusion.type === 'block')
                 publishFunc = vusion.ms.publishBlock;
+            else if (pkg.vusion.type === 'template')
+                publishFunc = vusion.ms.publishTemplate;
 
             await publishFunc(Object.assign({}, pkg, {
                 // homepage,
