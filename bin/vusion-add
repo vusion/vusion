@@ -136,14 +136,14 @@ async function add(args) {
         // Ask questions
         if (!program.quickly) {
             if (!options.source) {
-                const sourceType = config.download_registry;
+                const sourceType = config.download_manager;
 
                 // if (!sourceType) {
                 //     const sourceResult = await inquirer.prompt([{
                 //         name: 'sourceType',
                 //         type: 'list',
                 //         message: `Select a source registry ${chalk.gray('(输入中英文均可搜索)')}:`,
-                //         default: config.download_registry,
+                //         default: config.download_manager,
                 //         choices: Object.keys(config.registries).map((key) => ({
                 //             name: key + ' ' + chalk.gray(`(${config.registries[key]})`),
                 //             value: key,
@@ -189,8 +189,8 @@ async function add(args) {
                 };
             } else {
                 options.source = {
-                    type: config.download_registry,
-                    registry: config.registries[config.download_registry],
+                    type: config.download_manager,
+                    registry: config.registries[config.download_manager],
                     name: options.source,
                 };
             }
@@ -270,10 +270,10 @@ async function add(args) {
                 } catch (e) {
                     spinner.stop();
                     console.error();
-                    if (e.response.data.error === '[not_found] document not found')
+                    if (e.response && e.response.data.error === '[not_found] document not found')
                         logger.error(`Block ${chalk.cyan(options.source.name)} not found in ${chalk.cyan(options.source.registry)}`);
                     else
-                        logger.error(e.response.data);
+                        logger.error(e.response ? e.response.data : e);
                     process.exit(1);
                 }
             }
