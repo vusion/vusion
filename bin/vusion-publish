@@ -75,9 +75,11 @@ async function publish() {
         if (pkg.vusion && (pkg.vusion.type === 'component' || pkg.vusion.type === 'block' || pkg.vusion.type === 'template')) {
             await vusion.ms.getBlocks(); // 判断网络是否 OK
 
-            const unpkgHost = 'https://unpkg.com';
-            // if (registry.starsWith('https://registry.npmjs.org'))
-            pkg.homepage = `${unpkgHost}/${pkg.name}@${pkg.version}/public/index.html`;
+            if (pkg.vusion.type !== 'template') {
+                const unpkgHost = 'https://unpkg.com';
+                // if (registry.starsWith('https://registry.npmjs.org'))
+                pkg.homepage = `${unpkgHost}/${pkg.name}@${pkg.version}/public/index.html`;
+            }
 
             let repository = pkg.repository;
             if (!repository) {
@@ -116,11 +118,12 @@ async function publish() {
             await publishFunc(Object.assign({}, pkg, {
                 // homepage,
                 repository,
-                labels: pkg.keywords.join(','),
-                title: pkg.vusion.title,
+                labels: pkg.keywords && pkg.keywords.join(','),
+                title: pkg.vusion.title || pkg.title,
+                description: pkg.vusion.description || pkg.description,
                 category: pkg.vusion.category,
                 access: ACCESS_MAP[pkg.vusion.access],
-                screenshots: pkg.vusion.screenshots.slice(0, 12).join(','),
+                screenshots: pkg.vusion.screenshots && pkg.vusion.screenshots.slice(0, 12).join(','),
                 base: pkg.vusion.base || 'vue',
                 ui: pkg.vusion.ui || 'cloud-ui.vusion',
                 registry,

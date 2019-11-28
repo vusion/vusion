@@ -26,13 +26,38 @@ const vetur = {
     tags: {},
     attributes: {},
 };
-vusion.fs.listAllFiles(directory, {
-    patterns: ['!**/node_modules'],
-    includes: /api\.yaml$/,
-}).forEach((filePath) => {
+
+let files;
+try {
+    const pkg = require(path.resolve(absolutePath, 'package.json'));
+    if (pkg.name === 'cloud-ui.vusion') {
+        files = vusion.fs.listAllFiles(path.join(directory, 'node_modules/proto-ui.vusion'), {
+            patterns: ['!proto-ui.vusion/node_modules'],
+            includes: /api\.yaml$/,
+        }).concat(vusion.fs.listAllFiles(directory, {
+            patterns: ['!**/node_modules'],
+            includes: /api\.yaml$/,
+        }));
+    }
+} catch (e) {}
+
+if (!files) {
+    files = vusion.fs.listAllFiles(directory, {
+        patterns: ['!**/node_modules'],
+        includes: /api\.yaml$/,
+    });
+}
+
+files.forEach((filePath) => {
     const raw = fs.readFileSync(filePath, 'utf8');
     const apiHandler = new vusion.fs.APIHandler(raw, path.resolve(filePath));
-    const partial = apiHandler.toVetur();
+    let partial;
+    try {
+        partial = apiHandler.toVetur();
+    } catch (e) {
+        logger.error(filePath);
+        throw e;
+    }
     Object.assign(vetur.tags, partial.tags);
     Object.assign(vetur.attributes, partial.attributes);
 });

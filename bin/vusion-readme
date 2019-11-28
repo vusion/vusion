@@ -28,8 +28,14 @@ Promise.all(vusion.fs.listAllFiles(directory, {
 }).map(async (filePath) => {
     const raw = await fs.readFile(filePath, 'utf8');
     const apiHandler = new vusion.fs.APIHandler(raw, path.resolve(filePath));
-    const result = await apiHandler.markdown();
 
+    let result;
+    try {
+        result = await apiHandler.markdown();
+    } catch (e) {
+        logger.error(filePath);
+        throw e;
+    }
     const readmePath = path.join(filePath, '../README.md');
     await fs.writeFile(readmePath, result);
     logger.done(readmePath);
