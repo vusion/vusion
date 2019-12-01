@@ -25,12 +25,12 @@ program
     .usage('<command> [options]')
     .version(pkg.version)
     // Project commands
-    .command('init <type> <name> [dir]', 'Initialize a material')
+    .command('init <type> <name> [dir]', `Initialize a kind of material: ${chalk.yellow('component')}, ${chalk.yellow('block')}, ${chalk.yellow('template')}, ${chalk.yellow('repository')}, ...}`)
     .command('add <type> [source] [target]', `Add a kind of material: ${chalk.yellow('block')}`)
     .command('remove <type> [source] [target]', `Remove a kind of material: ${chalk.yellow('block')}`)
     .command('config <action> <key> [value]', 'Configure CLI options')
     .command('publish <version>', 'Publish a new version')
-    .command('screenshot', 'Take a screenshot of a web page')
+    .command('screenshot <url|local-file>', 'Take a screenshot of a web page')
     .command('ghpages', 'Push a directory to gh-pages')
     .command('readme', 'Generate final readable README.md from api.yaml and docs')
     .command('vetur', 'Generate tags.json and attributes.json for Vetur');

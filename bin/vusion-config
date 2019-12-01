@@ -11,14 +11,16 @@ const vusion = require('vusion-api');
 const program = require('commander');
 program
     .usage('<action> <key> <value>')
-    .description(`Configure CLI options:
-list                            List all config
-set <key> <value>               For example: vusion config set access_token f2224e629a7e24423e6b1bf6
-get <key>                       For example: vusion config get access_token
-delete <key>                    For example: vusion config delete default_registry
-add registry <manager> <url>    For example: vusion config add registry cnpm https://registry.npm.taobao.org
-remove registry <manager>       For example: vusion config remove registry cnpm
-edit                            Use vim to edit config directly
+    .description(`Configure CLI options
+
+Commands:
+  list                            List all config
+  set <key> <value>               Set an option value. For example: vusion config set access_token f2224e629a7e24423e6b1bf6
+  get <key>                       Get a value of an option. For example: vusion config get access_token
+  delete <key>                    Delete a option. For example: vusion config delete default_registry
+  add registry <manager> <url>    Add a pair of manager and registry. For example: vusion config add registry cnpm https://registry.npm.taobao.org
+  remove registry <manager>       Remove a pair of manager and registry. For example: vusion config remove registry cnpm
+  edit                            Use vim to edit config directly
 `)
     .parse(process.argv);
 
@@ -56,6 +58,6 @@ if (action === 'set') {
 } else if (action === 'edit') {
     exec('vi', [configurator.rcPath]);
 } else {
-    logger.error('Unknown action!');
+    logger.error('Unknown action of vusion-config!');
     process.exit(1);
 }

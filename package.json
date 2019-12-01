@@ -11,9 +11,7 @@
   },
   "repository": "vusion/vusion",
   "homepage": "http://vusion.github.io",
-  "bugs": {
-    "url": "http://github.com/vusion/vusion/issues"
-  },
+  "bugs": "http://github.com/vusion/vusion/issues",
   "keywords": [
     "vusion",
     "cli",
