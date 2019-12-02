@@ -83,7 +83,9 @@ async function publish() {
 
             let repository = pkg.repository;
             if (!repository) {
-                throw new Error(`Please set repository. A string or an object. For example:
+                console.warn('');
+                logger.warn('Information in package.json is not complete!');
+                console.warn(`Please set the repository. A string or an object. For example:
 "repository": "vusion/cloud-ui-materials"
 "repository": "https://github.com/vusion/cloud-ui-materials/tree/master/src/blocks/u-some-block.vue"
 "repository": {
@@ -92,6 +94,7 @@ async function publish() {
     "directory": "src/blocks/u-some-block.vue"
 }
                 `);
+                process.exit(1);
             }
             if (typeof pkg.repository === 'object')
                 repository = repository.url.replace(/\.git$/, '') + (pkg.repository.directory ? '/tree/master/' + pkg.repository.directory : '');

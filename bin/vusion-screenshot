@@ -27,7 +27,7 @@ const DEFAULT_PORT = 9600;
  */
 const program = require('commander');
 program
-    .usage('<url>')
+    .usage('<url|local-file>')
     .description(`Take a screenshot of a web page.
 For example:
   vusion screenshot https://www.example.com
