@@ -103,6 +103,7 @@ async function publish() {
 
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             await exec('git add package.json');
+
             !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
 
             console.info();

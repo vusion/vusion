@@ -27,9 +27,12 @@ Commands:
 const configurator = vusion.rc.configurator;
 const config = configurator.load();
 
-const [action, key, value, url] = program.args;
+let [action, key, value, url] = program.args;
 
 if (action === 'set') {
+    if (key === 'platform')
+        value = value.replace(/\/$/, '');
+
     config[key] = value;
     configurator.save();
     logger.done(key + '=' + value);
@@ -41,6 +44,8 @@ if (action === 'set') {
     logger.done('Deleted key ' + key);
 } else if (action === 'add') {
     if (key === 'registry') {
+        url = url.replace(/\/$/, '');
+
         config.registries = config.registries || {};
         config.registries[value] = url;
         configurator.save();
