@@ -33,9 +33,8 @@ program
     .command('screenshot <url|local-file>', 'Take a screenshot of a web page')
     .command('ghpages', 'Push a directory to gh-pages')
     .command('readme', 'Generate final readable README.md from api.yaml and docs')
-    .command('vetur', 'Generate tags.json and attributes.json for Vetur');
-// Component commands
-// .command('transform <vue-path>', 'Transform Vue component between singlefile and multifile pattern');
+    .command('vetur', 'Generate tags.json and attributes.json for Vetur')
+    .command('transform <vue-path>', 'Transform Vue file between singlefile and multifile pattern');
 
 // output help information on unknown commands
 program.on('command:*', ([cmd]) => {

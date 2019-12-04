@@ -2,7 +2,7 @@
 
 const path = require('path');
 const logger = require('../lib/logger');
-const exec = require('../lib/exec');
+const exec = require('../lib/just-exec');
 const vusion = require('vusion-api');
 
 /**

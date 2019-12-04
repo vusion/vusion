@@ -1,93 +1,84 @@
 #!/usr/bin/env node
-const shell = require('shelljs');
-const program = require('commander');
+
 const fs = require('fs-extra');
 const path = require('path');
-
-const getTagContent = (content, tag) => {
-    const reg = new RegExp(`<${tag}.*?>([\\s\\S]+)<\\/${tag}>`);
-    const m = content.match(reg);
-    return m ? m[1].trim() + '\n' : '';
-};
-
-const fileToDir = function (vuePath) {
-    return fs.readFile(vuePath, 'utf8').then((data) => {
-        const html = getTagContent(data, 'template');
-        const script = getTagContent(data, 'script');
-        const style = getTagContent(data, 'style');
-
-        shell.rm('-f', vuePath);
-        shell.mkdir(vuePath);
-
-        const promises = [];
-        html && promises.push(fs.writeFile(path.resolve(vuePath, 'index.html'), html, 'utf8'));
-        script && promises.push(fs.writeFile(path.resolve(vuePath, 'index.js'), script, 'utf8'));
-        style && promises.push(fs.writeFile(path.resolve(vuePath, 'module.css'), style, 'utf8'));
-
-        return Promise.all(promises);
-    });
-};
-
-const dirToFile = function (vuePath) {
-    const htmlPath = path.resolve(vuePath, 'index.html');
-    const scriptPath = path.resolve(vuePath, 'index.js');
-    const stylePath = path.resolve(vuePath, 'module.css');
-
-    const promises = [];
-    promises.push(fs.readFile(htmlPath, 'utf8').then((s) => s.trim()).catch((e) => ''));
-    promises.push(fs.readFile(scriptPath, 'utf8').then((s) => s.trim()).catch((e) => ''));
-    promises.push(fs.readFile(stylePath, 'utf8').then((s) => s.trim()).catch((e) => ''));
-
-    return Promise.all(promises)
-        .then(([html, script, style]) => {
-            const data = [];
-            html && data.push(`<template>\n${html}\n</template>`);
-            script && data.push(`<script>\n${script}\n</script>`);
-            style && data.push(`<style module>\n${style}\n</style>`);
-
-            shell.rm('-rf', vuePath);
-            return fs.writeFile(vuePath, data.join('\n\n') + '\n', 'utf8');
-        });
-};
+const vusion = require('vusion-api');
+const inquirer = require('inquirer');
+const chalk = require('chalk');
+const logger = require('../lib/logger');
 
 /**
  * Parse Commands
  */
+const program = require('commander');
 program
+    .usage('<vue-path>')
+    .description('Transform Vue file between singlefile and multifile pattern')
     .option('-f, --force', 'Force to transform')
+    .option('-p, --package', 'Add package info')
     .parse(process.argv);
 
 let vuePath = program.args[0];
 if (!vuePath) {
-    console.error('[ERROR] No path given!');
+    logger.error('No path given!');
+    process.exit(1);
+} else if (!vuePath.endsWith('.vue')) {
+    logger.error('Please specify a vue path!');
     process.exit(1);
 }
-vuePath = path.resolve(process.env.PWD, vuePath);
 
-const tmpPath = `__vue_${Date.now()}`;
-const stats = fs.statSync(vuePath);
-if (stats.isDirectory()) { // multi -> single
-    const files = fs.readdirSync(vuePath);
-    if (files.some((file) => !(['.DS_Store', 'index.html', 'index.js', 'module.css'].includes(file)))
-        && !program.force) {
-        console.error('[ERROR] 文件夹中包含除 index.html, index.js, module.css 的其他文件，无法转换。如果要丢弃其他文件强制转换，请使用`-f, --force`');
-        process.exit(1);
+vuePath = path.resolve(process.cwd(), vuePath);
+
+async function run() {
+    const vueFile = new vusion.VueFile(vuePath);
+    await vueFile.preOpen();
+
+    // 检查多文件 -> 单文件时，是否需要判断强制转换
+    const checkResult = vueFile.checkTransform();
+    if (!program.force && vueFile.isDirectory && checkResult !== true) {
+        const { ok } = await inquirer.prompt([{
+            type: 'confirm',
+            name: 'ok',
+            default: false,
+            message: `多文件中包含 ${chalk.cyan(String(checkResult.slice(0, 3)))} 等特殊功能，
+  转换成单文件会丢失这些内容。是否强制转换？`,
+        }]);
+        if (!ok)
+            return;
     }
-    shell.cp('-r', vuePath, tmpPath);
 
-    dirToFile(vuePath).catch((e) => {
-        console.error('[ERROR] Transform from multi-file to single-file', e);
-        shell.rm('-rf', vuePath);
-        shell.cp('-r', tmpPath, vuePath);
-    }).then(() => {
-        shell.rm('-rf', tmpPath);
-    });
-} else { // single -> multi
-    fileToDir(vuePath).catch((e) => {
-        console.error('[ERROR] Transform from single-file to multi-file', e);
-        shell.rm('-rf', vuePath);
-        shell.cp('-r', tmpPath, vuePath);
-    }).then(() => {
-        shell.rm('-rf', tmpPath);
-    });
+    await vueFile.open();
+    vueFile.transform();
+    await vueFile.save();
+
+    logger.done(`${vueFile.fileName} 已成功由${vueFile.isDirectory ? '单文件 -转为-> 多文件' : '多文件 -转为-> 单文件'}！`);
+    // const tmpPath = `__vue_${Date.now()}`;
+    // const stats = fs.statSync(vuePath);
+    // if (stats.isDirectory()) { // multi -> single
+    //     const files = fs.readdirSync(vuePath);
+    //     if (files.some((file) => !(['.DS_Store', 'index.html', 'index.js', 'module.css'].includes(file)))
+    //         && !program.force) {
+    //         console.error('[ERROR] 文件夹中包含除 index.html, index.js, module.css 的其他文件，无法转换。如果要丢弃其他文件强制转换，请使用`-f, --force`');
+    //         process.exit(1);
+    //     }
+    //     shell.cp('-r', vuePath, tmpPath);
+
+    //     dirToFile(vuePath).catch((e) => {
+    //         console.error('[ERROR] Transform from multi-file to single-file', e);
+    //         shell.rm('-rf', vuePath);
+    //         shell.cp('-r', tmpPath, vuePath);
+    //     }).then(() => {
+    //         shell.rm('-rf', tmpPath);
+    //     });
+    // } else { // single -> multi
+    //     fileToDir(vuePath).catch((e) => {
+    //         console.error('[ERROR] Transform from single-file to multi-file', e);
+    //         shell.rm('-rf', vuePath);
+    //         shell.cp('-r', tmpPath, vuePath);
+    //     }).then(() => {
+    //         shell.rm('-rf', tmpPath);
+    //     });
+    // }
 }
+
+run();

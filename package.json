@@ -7,7 +7,7 @@
     "vusion": "bin/vusion"
   },
   "scripts": {
-    "test": "npm-run-all test-*"
+    "test": "mocha test/**/*.test.js"
   },
   "repository": "vusion/vusion",
   "homepage": "http://vusion.github.io",

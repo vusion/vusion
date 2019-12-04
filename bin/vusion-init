@@ -1,5 +1,5 @@
 #!/usr/bin/env node
 
-const exec = require('../lib/exec');
+const exec = require('../lib/just-exec');
 
 exec('node', [require.resolve('create-vusion/bin/create-vusion')].concat(process.argv.slice(2)));

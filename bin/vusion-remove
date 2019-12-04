@@ -62,16 +62,6 @@ async function remove(args) {
             name: program.rename,
         };
 
-        // if (!options.target) {
-        //     const { target } = await inquirer.prompt([{
-        //         name: 'target',
-        //         type: 'input',
-        //         message: 'Please specify target path. Default is',
-        //         default: './src/views/dashboard',
-        //     }]);
-        //     options.target = target;
-        // }
-
         if (!options.name) {
             const { name } = await inquirer.prompt([{
                 name: 'name',
@@ -79,6 +69,16 @@ async function remove(args) {
                 message: 'Please input module name:',
             }]);
             options.name = name;
+        }
+
+        if (!options.target) {
+            const { target } = await inquirer.prompt([{
+                name: 'target',
+                type: 'input',
+                message: 'Please specify target path. Default is',
+                default: './src/views/dashboard',
+            }]);
+            options.target = target;
         }
 
         if (!options.target || !options.name)
