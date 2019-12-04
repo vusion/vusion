@@ -197,7 +197,7 @@ function minifyImg(imgPath, outputDir) {
     });
 }
 
-async function exec() {
+async function run() {
     let { selector, delay } = program;
     const url = program.args[0];
     if (!url) {
@@ -236,4 +236,4 @@ async function exec() {
     }
 }
 
-exec();
+run();

@@ -6,6 +6,8 @@ const vusion = require('vusion-api');
 const inquirer = require('inquirer');
 const chalk = require('chalk');
 const logger = require('../lib/logger');
+const exec = require('../lib/just-exec');
+const execa = require('execa');
 
 /**
  * Parse Commands
@@ -16,69 +18,75 @@ program
     .description('Transform Vue file between singlefile and multifile pattern')
     .option('-f, --force', 'Force to transform')
     .option('-p, --package', 'Add package info')
+    .option('-t, --type <type>', 'to component or block', 'component')
     .parse(process.argv);
 
-let vuePath = program.args[0];
+const vuePath = program.args[0];
 if (!vuePath) {
-    logger.error('No path given!');
+    logger.error('No vue path given!');
     process.exit(1);
 } else if (!vuePath.endsWith('.vue')) {
     logger.error('Please specify a vue path!');
     process.exit(1);
 }
 
-vuePath = path.resolve(process.cwd(), vuePath);
+if (program.package && !(program.type === 'component' || program.type === 'block')) {
+    logger.error(`Unsupported type ${program.type}!`);
+    process.exit(1);
+}
+
+const fullPath = path.resolve(process.cwd(), vuePath);
 
 async function run() {
-    const vueFile = new vusion.VueFile(vuePath);
+    const vueFile = new vusion.VueFile(fullPath);
     await vueFile.preOpen();
 
-    // 检查多文件 -> 单文件时，是否需要判断强制转换
-    const checkResult = vueFile.checkTransform();
-    if (!program.force && vueFile.isDirectory && checkResult !== true) {
-        const { ok } = await inquirer.prompt([{
-            type: 'confirm',
-            name: 'ok',
-            default: false,
-            message: `多文件中包含 ${chalk.cyan(String(checkResult.slice(0, 3)))} 等特殊功能，
+    if (program.package) {
+        // 检查多文件 -> 单文件时，是否需要判断强制转换
+        const checkResult = vueFile.checkTransform();
+        if (!program.force && vueFile.isDirectory && checkResult !== true) {
+            const { ok } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'ok',
+                default: false,
+                message: `多文件中包含 ${chalk.cyan(String(checkResult.slice(0, 3)))} 等特殊功能文件，
+  转换成 package 会重置这些内容。是否强制转换？`,
+            }]);
+            if (!ok)
+                return;
+        }
+
+        await vueFile.open();
+        console.info(`Now transform to vusion ${program.type} package. Please complete some additional info.`);
+        await execa(require.resolve('create-vusion/bin/create-vusion'), [program.type, '--force', vueFile.fileName], {
+            cwd: path.dirname(fullPath),
+            stdio: 'inherit',
+        });
+
+        if (!vueFile.isDirectory)
+            vueFile.transform();
+        await vueFile.save();
+    } else {
+        // 检查多文件 -> 单文件时，是否需要判断强制转换
+        const checkResult = vueFile.checkTransform();
+        if (!program.force && vueFile.isDirectory && checkResult !== true) {
+            const { ok } = await inquirer.prompt([{
+                type: 'confirm',
+                name: 'ok',
+                default: false,
+                message: `多文件中包含 ${chalk.cyan(String(checkResult.slice(0, 3)))} 等特殊功能文件，
   转换成单文件会丢失这些内容。是否强制转换？`,
-        }]);
-        if (!ok)
-            return;
+            }]);
+            if (!ok)
+                return;
+        }
+
+        await vueFile.open();
+        vueFile.transform();
+        await vueFile.save();
+
+        logger.done(`${vueFile.fileName} 已成功由${vueFile.isDirectory ? '单文件 -转为-> 多文件' : '多文件 -转为-> 单文件'}！`);
     }
-
-    await vueFile.open();
-    vueFile.transform();
-    await vueFile.save();
-
-    logger.done(`${vueFile.fileName} 已成功由${vueFile.isDirectory ? '单文件 -转为-> 多文件' : '多文件 -转为-> 单文件'}！`);
-    // const tmpPath = `__vue_${Date.now()}`;
-    // const stats = fs.statSync(vuePath);
-    // if (stats.isDirectory()) { // multi -> single
-    //     const files = fs.readdirSync(vuePath);
-    //     if (files.some((file) => !(['.DS_Store', 'index.html', 'index.js', 'module.css'].includes(file)))
-    //         && !program.force) {
-    //         console.error('[ERROR] 文件夹中包含除 index.html, index.js, module.css 的其他文件，无法转换。如果要丢弃其他文件强制转换，请使用`-f, --force`');
-    //         process.exit(1);
-    //     }
-    //     shell.cp('-r', vuePath, tmpPath);
-
-    //     dirToFile(vuePath).catch((e) => {
-    //         console.error('[ERROR] Transform from multi-file to single-file', e);
-    //         shell.rm('-rf', vuePath);
-    //         shell.cp('-r', tmpPath, vuePath);
-    //     }).then(() => {
-    //         shell.rm('-rf', tmpPath);
-    //     });
-    // } else { // single -> multi
-    //     fileToDir(vuePath).catch((e) => {
-    //         console.error('[ERROR] Transform from single-file to multi-file', e);
-    //         shell.rm('-rf', vuePath);
-    //         shell.cp('-r', tmpPath, vuePath);
-    //     }).then(() => {
-    //         shell.rm('-rf', tmpPath);
-    //     });
-    // }
 }
 
 run();
