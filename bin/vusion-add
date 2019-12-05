@@ -236,7 +236,7 @@ async function add(args) {
                 const { name } = await inquirer.prompt([{
                     name: 'name',
                     type: 'input',
-                    message: `Do you want to rename component? Default is`,
+                    message: `Do you want to rename block name and tag? Default is`,
                     default: path.basename(dest, '.vue'),
                     filter(componentName) {
                         let baseName = componentName.replace(/\.vue$/, '');
