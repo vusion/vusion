@@ -71,6 +71,7 @@ async function publish() {
 
     const info = name.endsWith('.vue') ? `${name}@${version}` : `v${version}`;
 
+    let gitAddFailed = false;
     try {
         if (pkg.vusion && (pkg.vusion.type === 'component' || pkg.vusion.type === 'block' || pkg.vusion.type === 'template')) {
             await vusion.ms.getBlocks(); // 判断网络是否 OK
@@ -102,9 +103,21 @@ async function publish() {
                 repository = 'https://github.com/' + pkg.repository;
 
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            await exec('git add package.json');
+            try {
+                await exec('git add package.json');
+            } catch (e) {
+                gitAddFailed = true;
+            }
 
             !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
+
+            if (pkg.vusion.type === 'component' || pkg.vusion.type === 'block') {
+                try {
+                    // git add . 加在 npm 包中也不太好，不加也不好
+                    if (!gitAddFailed)
+                        await exec('git add .');
+                } catch (e) {}
+            }
 
             console.info();
             logger.done('Successfully published!');
@@ -137,7 +150,11 @@ async function publish() {
             logger.done('Registered package on vusion platform.');
         } else { // 普通 publish
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
-            await exec('git add package.json');
+            try {
+                await exec('git add package.json');
+            } catch (e) {
+                gitAddFailed = true;
+            }
             !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
 
             console.info();
@@ -150,25 +167,27 @@ async function publish() {
         process.exit(1);
     }
 
-    console.info();
-    try {
-        await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
-    } catch (e) {}
+    if (!gitAddFailed) {
+        console.info();
+        try {
+            await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
+        } catch (e) {}
 
-    let pushAndTag = true;
-    try {
-        await exec(`git push`);
-    } catch (e) {
-        pushAndTag = false;
+        let pushAndTag = true;
+        try {
+            await exec(`git push`);
+        } catch (e) {
+            pushAndTag = false;
+        }
+        try {
+            await exec(`git tag ${info}`);
+            await exec(`git push origin ${info}`);
+        } catch (e) {
+            pushAndTag = false;
+        }
+        console.info();
+        pushAndTag && logger.done(`Successfully pushed git branch and tag ${chalk.yellow(info)}`);
     }
-    try {
-        await exec(`git tag ${info}`);
-        await exec(`git push origin ${info}`);
-    } catch (e) {
-        pushAndTag = false;
-    }
-    console.info();
-    pushAndTag && logger.done(`Successfully pushed git branch and tag ${chalk.yellow(info)}`);
 }
 
 publish();
