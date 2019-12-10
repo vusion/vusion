@@ -48,7 +48,7 @@
     "semver": "^5.5.0",
     "shelljs": "^0.8.2",
     "update-notifier": "^2.5.0",
-    "vusion-api": "^0.5.13",
+    "vusion-api": "^0.5.15",
     "yaml": "^1.7.2"
   },
   "devDependencies": {

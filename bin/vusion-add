@@ -184,7 +184,7 @@ async function add(args) {
 
                 options.source = {
                     type: sourceType,
-                    registry: config.registries[sourceType],
+                    registry: block.registry || config.registries[sourceType],
                     name: block,
                 };
             } else {
