@@ -16,11 +16,6 @@ CLI for developing Vusion Projects.
 [download-img]: https://img.shields.io/npm/dm/vusion.svg?style=flat-square
 [download-url]: https://npmjs.org/package/vusion
 
-## Project Types
-
-- `library`
-- `app`
-
 ## Install
 
 ``` shell
@@ -30,8 +25,7 @@ npm install -g vusion
 ## Quick Start
 
 ``` shell
-vusion init <dir> [templateName]
-npm run dev
+vusion init
 ```
 
 ## Commands
@@ -39,7 +33,7 @@ npm run dev
 - `vusion help`: Show help of all commands
 - `vusion -V, --version`: Show the version of current CLI
 
-- `init <type> <name> [dir]`: Initialize a material
+- `init <type> <name>`: Initialize a material
 - `add <type> [source] [target]`: Add a kind of material: block
 - `remove <type> [source] [target]`: Remove a kind of material: block
 - `publish <version>`: Publish a new version
