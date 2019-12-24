@@ -102,10 +102,6 @@ async function publish() {
             else if (!pkg.repository.startsWith('http'))
                 repository = 'https://github.com/' + pkg.repository;
 
-            if (pkg.vusion.access === 'team' && !pkg.vusion.team) {
-                logger.error('Must set vusion.team if access is team in package.json!');
-                process.exit(1);
-            }
             if (pkg.vusion.team) {
                 const result = await vusion.ms.teamExist(pkg.vusion.team);
                 if (!result) {
