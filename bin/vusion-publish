@@ -57,7 +57,7 @@ async function publish() {
 
     pkg.version = version;
 
-    const npmCmds = [`${manager} publish`];
+    const npmCmds = [`${/^win/.test(process.platform) ? manager + '.cmd' : manager} publish`];
     if (program.tag)
         npmCmds.push(`--tag ${program.tag}`);
 
@@ -82,21 +82,21 @@ async function publish() {
                 pkg.homepage = `${unpkgHost}/${pkg.name}@${pkg.version}/public/index.html`;
             }
 
-            let repository = pkg.repository;
-            if (!repository) {
-                console.warn('');
-                logger.warn('Information in package.json is not complete!');
-                console.warn(`Please set the repository. A string or an object. For example:
-"repository": "vusion/cloud-ui-materials"
-"repository": "https://github.com/vusion/cloud-ui-materials/tree/master/src/blocks/u-some-block.vue"
-"repository": {
-    "type": "git",
-    "url": "https://github.com/vusion/cloud-ui-materials.git",
-    "directory": "src/blocks/u-some-block.vue"
-}
-                `);
-                process.exit(1);
-            }
+            let repository = pkg.repository || '';
+            //             if (!repository) {
+            //                 console.warn('');
+            //                 logger.warn('Information in package.json is not complete!');
+            //                 console.warn(`Please set the repository. A string or an object. For example:
+            // "repository": "vusion/cloud-ui-materials"
+            // "repository": "https://github.com/vusion/cloud-ui-materials/tree/master/src/blocks/u-some-block.vue"
+            // "repository": {
+            //     "type": "git",
+            //     "url": "https://github.com/vusion/cloud-ui-materials.git",
+            //     "directory": "src/blocks/u-some-block.vue"
+            // }
+            //                 `);
+            //                 process.exit(1);
+            //             }
             if (typeof pkg.repository === 'object')
                 repository = repository.url.replace(/\.git$/, '') + (pkg.repository.directory ? '/tree/master/' + pkg.repository.directory : '');
             else if (!pkg.repository.startsWith('http'))
