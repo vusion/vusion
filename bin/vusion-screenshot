@@ -38,6 +38,7 @@ For example:
     .option('-d, --delay <delay>', 'Screenshot with a delay')
     .option('-w, --width <width>', 'Viewport width')
     .option('-h, --height <height>', 'Viewport height')
+    .option('-m, --max-count <height>', 'Max screenshots count')
     .option('--dsf <device-scale-factor>', 'Specify device scale factor (can be thought of as dpr). Defaults to 2', 2)
     .option('--package [package-path]', 'Autoset package.json screenshots')
     .parse(process.argv);
@@ -45,13 +46,16 @@ For example:
 /**
  * Take a screenshot with local server
  *
- * @param {string} serverPath local server directory
- * @param {number} port server port
- * @param {string} targetUrl the target url
- * @param {string} selector the target CSS selector
- * @param {string} output output path
+ * @param {string} options.serverPath Local server directory
+ * @param {number} options.port Server port
+ * @param {string} options.targetUrl The target url
+ * @param {string} options.selector The target CSS selector
+ * @param {number} options.elNumber Only screeenshot specify number element
+ * @param {string} options.output Output path
+ * @param {number} options.delay Screenshot with a delay
+ * @param {{ width: number, height: number }} options.viewport Screenshot in a viewport
  */
-async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, elNumber, output, delay, viewport) {
+async function screenshotWithLocalServer({ serverPath, port, targetUrl, selector, elNumber, output, delay, viewport }) {
     if (targetUrl.startsWith('./'))
         targetUrl = targetUrl.slice(2);
     targetUrl = targetUrl ? `http://127.0.0.1:${port}/${targetUrl}` : `http://127.0.0.1:${port}/public/index.html`;
@@ -60,7 +64,7 @@ async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, 
     console.info(chalk.white(`Create local server with port ${port}`));
     console.info(chalk.white(`The screenshot target url: ${targetUrl}`));
 
-    await screenshot(targetUrl, selector, elNumber, output, delay, viewport);
+    await screenshot({ targetUrl, selector, elNumber, output, delay, viewport });
 
     server.close();
 }
@@ -68,11 +72,14 @@ async function screenshotWithLocalServer(serverPath, port, targetUrl, selector, 
 /**
  * Take a screenshot of web page
  *
- * @param {string} url the target url
- * @param {string} selector screenshot target CSS selector
- * @param {string} output output path
+ * @param {string} options.url The target url
+ * @param {string} options.selector The target CSS selector
+ * @param {number} options.elNumber Only screeenshot specify number element
+ * @param {string} options.output Output path
+ * @param {number} options.delay Screenshot with a delay
+ * @param {{ width: number, height: number }} options.viewport Screenshot in a viewport
  */
-async function screenshot(url, selector, elNumber, output, delay, viewport) {
+async function screenshot({ url, selector, elNumber, output, delay, viewport }) {
     // a terminal spinner
     const spinner = ora('Screenshoting...').start();
 
@@ -187,8 +194,8 @@ async function screenshot(url, selector, elNumber, output, delay, viewport) {
 /**
  * minify an image
  *
- * @param {String} imgPath
- * @param {*} outputDir output dir
+ * @param {string} imgPath
+ * @param {string} outputDir Output dir
  * @returns
  */
 function minifyImg(imgPath, outputDir) {
@@ -230,9 +237,9 @@ async function run() {
     if (local) {
         // const port = await detect(DEFAULT_PORT);
         // await screenshotWithLocalServer(cwd, port, url, selector, elNumber, output, delay, viewport);
-        await screenshot(nodeURL.pathToFileURL(url), selector, elNumber, output, delay, viewport);
+        await screenshot({ url: nodeURL.pathToFileURL(url), selector, elNumber, output, delay, viewport });
     } else {
-        await screenshot(url, selector, elNumber, output, delay, viewport);
+        await screenshot({ url, selector, elNumber, output, delay, viewport });
     }
 }
 
