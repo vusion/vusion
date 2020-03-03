@@ -34,11 +34,11 @@ For example:
 `)
     .option('-o, --output <output>', 'Output path')
     .option('-s, --selector <selector>', 'Select a element through CSS selector')
-    .option('-c, --code-example [number]', 'Auto detect selector from code example')
+    .option('-c, --code-example [number]', 'Auto detect selector from code example. Batch mode if not specify example number')
+    .option('-m, --max-count <height>', 'Max screenshots count in batch mode. Defaults to 6', 6)
     .option('-d, --delay <delay>', 'Screenshot with a delay')
     .option('-w, --width <width>', 'Viewport width')
     .option('-h, --height <height>', 'Viewport height')
-    .option('-m, --max-count <height>', 'Max screenshots count')
     .option('--dsf <device-scale-factor>', 'Specify device scale factor (can be thought of as dpr). Defaults to 2', 2)
     .option('--package [package-path]', 'Autoset package.json screenshots')
     .parse(process.argv);
@@ -64,7 +64,7 @@ async function screenshotWithLocalServer({ serverPath, port, targetUrl, selector
     console.info(chalk.white(`Create local server with port ${port}`));
     console.info(chalk.white(`The screenshot target url: ${targetUrl}`));
 
-    await screenshot({ targetUrl, selector, elNumber, output, delay, viewport });
+    await screenshot({ targetUrl, selector, elNumber, maxCount, output, delay, viewport });
 
     server.close();
 }
@@ -79,7 +79,7 @@ async function screenshotWithLocalServer({ serverPath, port, targetUrl, selector
  * @param {number} options.delay Screenshot with a delay
  * @param {{ width: number, height: number }} options.viewport Screenshot in a viewport
  */
-async function screenshot({ url, selector, elNumber, output, delay, viewport }) {
+async function screenshot({ url, selector, elNumber, maxCount, output, delay, viewport }) {
     // a terminal spinner
     const spinner = ora('Screenshoting...').start();
 
@@ -134,7 +134,7 @@ async function screenshot({ url, selector, elNumber, output, delay, viewport }) 
             elNumber = 0;
             let el = (await page.$$(selector))[elNumber];
             /* eslint-disable no-await-in-loop */
-            while (el) {
+            while (el && elNumber < maxCount) {
                 output = path.join(output, '../' + elNumber + '.png');
                 await el.screenshot({ path: output });
 
@@ -237,9 +237,9 @@ async function run() {
     if (local) {
         // const port = await detect(DEFAULT_PORT);
         // await screenshotWithLocalServer(cwd, port, url, selector, elNumber, output, delay, viewport);
-        await screenshot({ url: nodeURL.pathToFileURL(url), selector, elNumber, output, delay, viewport });
+        await screenshot({ url: nodeURL.pathToFileURL(url), selector, elNumber, maxCount: program.maxCount, output, delay, viewport });
     } else {
-        await screenshot({ url, selector, elNumber, output, delay, viewport });
+        await screenshot({ url, selector, elNumber, maxCount: program.maxCount, output, delay, viewport });
     }
 }
 
