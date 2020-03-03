@@ -2,7 +2,6 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const nodeURL = require('url');
 const chalk = require('chalk');
 const ora = require('ora');
 const logger = require('../lib/logger');
@@ -12,6 +11,9 @@ const imageminMozjpeg = require('imagemin-mozjpeg');
 const imageminPngquant = require('imagemin-pngquant');
 const createServer = require('../lib/createServer');
 const getPuppeteer = require('../lib/getPuppeteer');
+
+// 需要支持 #，所以不能用 url.pathToFileURL
+const pathToFileURL = (filePath) => 'file:///' + path.resolve(filePath).replace(/\\/g, '/');
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 const cwd = process.cwd();
@@ -241,7 +243,7 @@ async function run() {
             const port = await detect(DEFAULT_PORT);
             await screenshotWithLocalServer({ serverPath: cwd, port, url, selector, elNumber, maxCount: program.maxCount, output, delay, viewport });
         } else {
-            await screenshot({ url: nodeURL.pathToFileURL(url), selector, elNumber, maxCount: program.maxCount, output, delay, viewport });
+            await screenshot({ url: pathToFileURL(url), selector, elNumber, maxCount: program.maxCount, output, delay, viewport });
         }
     } else {
         await screenshot({ url, selector, elNumber, maxCount: program.maxCount, output, delay, viewport });
