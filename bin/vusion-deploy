@@ -1,0 +1,62 @@
+#!/usr/bin/env node
+
+const fs = require('fs');
+const path = require('path');
+const vusion = require('vusion-api');
+const logger = require('../lib/logger');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('[source]')
+    .description(`Push files to NOS static bucket. Defaults to 'public'`)
+    // .option('--rename <rename>', `Change source name on NOS static bucket. Defaults to '{pkgName}'`, '{pkgName}')
+    .parse(process.argv);
+
+let source = program.args[0] || 'public';
+const cwd = process.cwd();
+source = path.resolve(cwd, source);
+
+if (!fs.existsSync(source)) {
+    console.error(`Cannot find source: ${source}`);
+    process.exit(1);
+}
+
+const pkgPath = path.resolve(process.cwd(), 'package.json');
+if (!fs.existsSync(pkgPath)) {
+    console.error('[ERROR] Not a npm package');
+    console.error('Please locate into a npm package source.');
+    process.exit(1);
+}
+const pkg = require(pkgPath);
+const prefix = 'packages/' + pkg.name; // 目前不允许用户任意发 + program.rename.replace(/\{pkgName\}/, pkg.name);
+let formFiles;
+
+if (fs.statSync(source).isDirectory()) {
+    formFiles = vusion.fs.listAllFiles(source, {
+        type: 'file',
+        dot: true,
+        patterns: ['!**/node_modules', '!**/.git'],
+    });
+} else {
+    formFiles = [source];
+}
+
+formFiles = formFiles.map((filePath) => {
+    let relativePath = path.relative(cwd, filePath).replace(/^public[\\/]/, '');
+    relativePath = path.join(prefix, relativePath);
+    return { name: relativePath, path: filePath };
+});
+
+vusion.ms.upload.nos(formFiles).then(({ result }) => {
+    const first = result[1] || result[0];
+    // const url = `http://${first.bucket}.${first.endpoint}${+first.port === 80 ? '' : ':' + first.port}/${first.key}`;
+    const url = 'http://static.vusion.163yun.com/' + first.key;
+    logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
+Try to access: ${url}`);
+}).catch((e) => {
+    logger.error(e);
+    process.exit(1);
+});
