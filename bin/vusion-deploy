@@ -37,7 +37,7 @@ let formFiles;
 if (fs.statSync(source).isDirectory()) {
     formFiles = vusion.fs.listAllFiles(source, {
         type: 'file',
-        dot: true,
+        dot: false,
         patterns: ['!**/node_modules', '!**/.git'],
     });
 } else {
@@ -51,7 +51,12 @@ formFiles = formFiles.map((filePath) => {
 });
 
 vusion.ms.upload.nos(formFiles).then(({ result }) => {
-    const first = result[1] || result[0];
+    let first = result[0];
+    for (let i = 0; i < result.length; i++) {
+        first = result[i];
+        if (!first.key.includes('404')) // 404 的文件给人感觉不友好
+            break;
+    }
     // const url = `http://${first.bucket}.${first.endpoint}${+first.port === 80 ? '' : ':' + first.port}/${first.key}`;
     const url = 'http://static.vusion.163yun.com/' + first.key;
     logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
