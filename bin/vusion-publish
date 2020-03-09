@@ -77,9 +77,9 @@ async function publish() {
             await vusion.ms.getBlocks(); // 判断网络是否 OK
 
             if (pkg.vusion.type !== 'template') {
-                const unpkgHost = 'https://unpkg.com';
+                const staticBaseURL = 'http://static.vusion.163yun.com/packages';
                 // if (registry.starsWith('https://registry.npmjs.org'))
-                pkg.homepage = `${unpkgHost}/${pkg.name}@${pkg.version}/public/index.html`;
+                pkg.homepage = `${staticBaseURL}/${pkg.name}@${pkg.version}/index.html`;
             }
 
             let repository = pkg.repository || '';

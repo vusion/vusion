@@ -95,8 +95,8 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
     }
 
     function writeIntoPackage(relativePath) {
-        const unpkgHost = 'https://unpkg.com';
-        const finalPath = `${unpkgHost}/${pkg.name}@${pkg.version}/${relativePath}`;
+        const staticBaseURL = 'http://static.vusion.163yun.com/packages';
+        const finalPath = `${staticBaseURL}/${pkg.name}@${pkg.version}/${relativePath}`;
         // if (!screenshots.includes(finalPath))
         pkg.vusion.screenshots.push(finalPath);
     }

@@ -31,7 +31,7 @@ if (!fs.existsSync(pkgPath)) {
     process.exit(1);
 }
 const pkg = require(pkgPath);
-const prefix = 'packages/' + pkg.name; // 目前不允许用户任意发 + program.rename.replace(/\{pkgName\}/, pkg.name);
+const prefix = `packages/${pkg.name}@${pkg.version}`; // 目前不允许用户任意发 + program.rename.replace(/\{pkgName\}/, pkg.name);
 let formFiles;
 
 if (fs.statSync(source).isDirectory()) {
