@@ -57,6 +57,10 @@ vusion.ms.upload.nos(formFiles).then(({ result }) => {
     logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
 Try to access: ${url}`);
 }).catch((e) => {
-    logger.error(e);
+    if (e.response.status === 413) {
+        logger.error('Exceeded size of files!');
+        console.error(e.toString());
+    } else
+        logger.error(e);
     process.exit(1);
 });

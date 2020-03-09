@@ -77,9 +77,12 @@ async function publish() {
             await vusion.ms.getBlocks(); // 判断网络是否 OK
 
             if (pkg.vusion.type !== 'template') {
-                const staticBaseURL = 'http://static.vusion.163yun.com/packages';
+                // 兼容老版，以后私有库可能有用
+                const isOnNOS = pkg.scripts.deploy && pkg.scripts.deploy.includes('vusion deploy');
+                let staticBaseURL = isOnNOS ? 'http://static.vusion.163yun.com/packages' : 'https://unpkg.com';
+                staticBaseURL += `/${pkg.name}@${pkg.version}`;
                 // if (registry.starsWith('https://registry.npmjs.org'))
-                pkg.homepage = `${staticBaseURL}/${pkg.name}@${pkg.version}/index.html`;
+                pkg.homepage = isOnNOS ? `${staticBaseURL}/index.html` : `${staticBaseURL}/public/index.html`;
             }
 
             let repository = pkg.repository || '';
