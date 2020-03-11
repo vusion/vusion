@@ -37,7 +37,6 @@
     "gh-pages": "^1.2.0",
     "global-dirs": "^2.0.1",
     "imagemin": "^7.0.1",
-    "imagemin-mozjpeg": "^8.0.0",
     "imagemin-pngquant": "^8.0.0",
     "import-global": "^0.1.0",
     "inquirer": "^7.0.0",

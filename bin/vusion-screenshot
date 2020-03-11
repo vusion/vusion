@@ -6,9 +6,7 @@ const chalk = require('chalk');
 const ora = require('ora');
 const logger = require('../lib/logger');
 const detect = require('detect-port');
-const imagemin = require('imagemin');
-const imageminMozjpeg = require('imagemin-mozjpeg');
-const imageminPngquant = require('imagemin-pngquant');
+const minifyImg = require('../lib/minifyImg');
 const createServer = require('../lib/createServer');
 const getPuppeteer = require('../lib/getPuppeteer');
 
@@ -195,19 +193,6 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
         }
         process.exit(1);
     }
-}
-
-/**
- * minify an image
- *
- * @param {string} imgPath
- * @param {string} outputDir Output dir
- * @returns
- */
-function minifyImg(imgPath, outputDir) {
-    return imagemin([imgPath], outputDir, {
-        plugins: [imageminMozjpeg(), imageminPngquant()],
-    });
 }
 
 async function run() {
