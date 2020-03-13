@@ -10,8 +10,8 @@
     "test": "mocha test/**/*.test.js"
   },
   "repository": "vusion/vusion",
-  "homepage": "http://vusion.github.io",
-  "bugs": "http://github.com/vusion/vusion/issues",
+  "homepage": "https://vusion.github.io",
+  "bugs": "https://github.com/vusion/vusion/issues",
   "keywords": [
     "vusion",
     "cli",

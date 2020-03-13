@@ -79,7 +79,7 @@ async function publish() {
             if (pkg.vusion.type !== 'template') {
                 // 兼容老版，以后私有库可能有用
                 const isOnNOS = pkg.scripts.deploy && pkg.scripts.deploy.includes('vusion deploy');
-                let staticBaseURL = isOnNOS ? 'http://static-vusion.163yun.com/packages' : 'https://unpkg.com';
+                let staticBaseURL = isOnNOS ? 'https://static-vusion.163yun.com/packages' : 'https://unpkg.com';
                 staticBaseURL += `/${pkg.name}@${pkg.version}`;
                 // if (registry.starsWith('https://registry.npmjs.org'))
                 pkg.homepage = isOnNOS ? `${staticBaseURL}/index.html` : `${staticBaseURL}/public/index.html`;

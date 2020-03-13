@@ -57,8 +57,8 @@ vusion.ms.upload.nos(formFiles).then(({ result }) => {
         if (!first.key.includes('404')) // 404 的文件给人感觉不友好
             break;
     }
-    // const url = `http://${first.bucket}.${first.endpoint}${+first.port === 80 ? '' : ':' + first.port}/${first.key}`;
-    const url = 'http://static-vusion.163yun.com/' + first.key;
+    // const url = `https://${first.bucket}.${first.endpoint}${+first.port === 80 ? '' : ':' + first.port}/${first.key}`;
+    const url = 'https://static-vusion.163yun.com/' + first.key;
     logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
 Try to access: ${url}`);
 }).catch((e) => {

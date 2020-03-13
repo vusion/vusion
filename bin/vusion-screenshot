@@ -96,7 +96,7 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
     function writeIntoPackage(relativePath) {
         // 兼容老版，以后私有库可能有用
         const isOnNOS = pkg.scripts.deploy && pkg.scripts.deploy.includes('vusion deploy');
-        const staticBaseURL = isOnNOS ? 'http://static-vusion.163yun.com/packages' : 'https://unpkg.com';
+        const staticBaseURL = isOnNOS ? 'https://static-vusion.163yun.com/packages' : 'https://unpkg.com';
         const finalPath = `${staticBaseURL}/${pkg.name}@${pkg.version}/${relativePath}`;
         // if (!screenshots.includes(finalPath))
         pkg.vusion.screenshots.push(finalPath);
