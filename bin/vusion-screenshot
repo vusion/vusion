@@ -6,7 +6,7 @@ const chalk = require('chalk');
 const ora = require('ora');
 const logger = require('../lib/logger');
 const detect = require('detect-port');
-const minifyImg = require('../lib/minifyImg');
+const imageProcessor = require('../lib/imageProcessor');
 const createServer = require('../lib/createServer');
 const getPuppeteer = require('../lib/getPuppeteer');
 
@@ -37,6 +37,7 @@ For example:
     .option('-d, --delay <delay>', 'Screenshot with a delay', parseInt)
     .option('-w, --width <width>', 'Viewport width', parseInt)
     .option('-h, --height <height>', 'Viewport height', parseInt)
+    .option('--smart-crop', 'Crop image transparent or white margin cleanly')
     .option('--dsf <device-scale-factor>', 'Specify device scale factor (can be thought of as dpr). Defaults to 2', parseInt, 2)
     .option('--package [package-path]', 'Autoset package.json screenshots')
     .parse(process.argv);
@@ -145,7 +146,9 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
                 await el.screenshot({ path: output });
 
                 // minify screenshot
-                await minifyImg(output, outputDir);
+                if (program.smartCrop)
+                    await imageProcessor.smartCrop(output);
+                await imageProcessor.minify(output);
                 console.info(`       Output path: ${chalk.cyan(output)}`);
                 pkg && writeIntoPackage(output);
 
@@ -165,7 +168,9 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
         }
 
         // minify screenshot
-        await minifyImg(output, outputDir);
+        if (program.smartCrop)
+            await imageProcessor.smartCrop(output);
+        await imageProcessor.minify(output);
 
         // close chromium
         await browser.close();

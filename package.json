@@ -26,6 +26,7 @@
     "node": ">=8"
   },
   "dependencies": {
+    "canvas": "^2.6.1",
     "chalk": "^2.4.2",
     "commander": "^2.20.0",
     "create-vusion": "^0.4.0",
