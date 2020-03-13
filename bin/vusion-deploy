@@ -58,7 +58,7 @@ vusion.ms.upload.nos(formFiles).then(({ result }) => {
             break;
     }
     // const url = `http://${first.bucket}.${first.endpoint}${+first.port === 80 ? '' : ':' + first.port}/${first.key}`;
-    const url = 'http://static.vusion.163yun.com/' + first.key;
+    const url = 'http://static-vusion.163yun.com/' + first.key;
     logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
 Try to access: ${url}`);
 }).catch((e) => {
