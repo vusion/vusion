@@ -12,6 +12,7 @@ const program = require('commander');
 program
     .usage('[source]')
     .description(`Push files to NOS static bucket. Defaults to 'public'`)
+    .option('--framework <framework>', `publish framework`)
     // .option('--rename <rename>', `Change source name on NOS static bucket. Defaults to '{pkgName}'`, '{pkgName}')
     .parse(process.argv);
 
@@ -49,8 +50,14 @@ formFiles = formFiles.map((filePath) => {
     relativePath = path.join(prefix, relativePath);
     return { name: relativePath, path: filePath };
 });
+let upload = null;
+if (program.framework) {
+    upload = vusion.ms.upload.framework(formFiles, program.framework);
+} else {
+    upload = vusion.ms.upload.nos(formFiles);
+}
 
-vusion.ms.upload.nos(formFiles).then(({ result }) => {
+upload.then(({ result }) => {
     let first = result[0];
     for (let i = 0; i < result.length; i++) {
         first = result[i];
