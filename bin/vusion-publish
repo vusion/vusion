@@ -159,6 +159,9 @@ async function publish() {
                 dependencies: JSON.stringify(pkg.dependencies),
             }));
             logger.done('Registered package on vusion platform.');
+
+            if (pkg.scripts.deploy)
+                await exec('npm run deploy');
         } else { // 普通 publish
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             try {
