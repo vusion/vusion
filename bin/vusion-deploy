@@ -24,7 +24,7 @@ if (!fs.existsSync(source)) {
     console.error(`Cannot find source: ${source}`);
     process.exit(1);
 }
-
+const isFramework = !!program.framework;
 const pkgPath = path.resolve(process.cwd(), 'package.json');
 if (!fs.existsSync(pkgPath)) {
     console.error('[ERROR] Not a npm package');
@@ -32,7 +32,8 @@ if (!fs.existsSync(pkgPath)) {
     process.exit(1);
 }
 const pkg = require(pkgPath);
-const prefix = `packages/${pkg.name}@${pkg.version}`; // 目前不允许用户任意发 + program.rename.replace(/\{pkgName\}/, pkg.name);
+const version = pkg.version;
+const prefix = `packages/${pkg.name}@${isFramework ? version.split('.').slice(0, 2).join('.') : version}`; // 目前不允许用户任意发 + program.rename.replace(/\{pkgName\}/, pkg.name);
 let formFiles;
 
 if (fs.statSync(source).isDirectory()) {
@@ -51,7 +52,7 @@ formFiles = formFiles.map((filePath) => {
     return { name: relativePath, path: filePath };
 });
 let upload = null;
-if (program.framework) {
+if (isFramework) {
     upload = vusion.ms.upload.framework(formFiles, program.framework);
 } else {
     upload = vusion.ms.upload.nos(formFiles);
