@@ -13,7 +13,7 @@ program
     .usage('[source]')
     .description(`Push files to NOS static bucket. Defaults to 'public'`)
     .option('--framework <framework>', `publish framework`)
-    // .option('--rename <rename>', `Change source name on NOS static bucket. Defaults to '{pkgName}'`, '{pkgName}')
+    .option('-v, --version-level <version-level>', `Specify the minimum version level after '@'. 'major', 'minor', 'patch'`, 'patch')
     .parse(process.argv);
 
 let source = program.args[0] || 'public';
@@ -32,8 +32,13 @@ if (!fs.existsSync(pkgPath)) {
     process.exit(1);
 }
 const pkg = require(pkgPath);
-const version = pkg.version;
-const prefix = `packages/${pkg.name}@${isFramework ? version.split('.').slice(0, 2).join('.') : version}`; // 目前不允许用户任意发 + program.rename.replace(/\{pkgName\}/, pkg.name);
+let version = pkg.version;
+if (program.versionLevel === 'major')
+    version = version.split('.')[0];
+else if (program.versionLevel === 'minor')
+    version = version.split('.').slice(0, 2).join('.');
+
+const prefix = `packages/${pkg.name}@${version}`;
 let formFiles;
 
 if (fs.statSync(source).isDirectory()) {
@@ -70,7 +75,7 @@ upload.then(({ result }) => {
     logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
 Try to access: ${url}`);
 }).catch((e) => {
-    if (e.response.status === 413) {
+    if (e.response && e.response.status === 413) {
         logger.error('Exceeded size of files!');
         console.error(e.toString());
     } else
