@@ -139,20 +139,24 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
             await el.screenshot({ path: output });
         } else if (selector && elNumber === true) {
             elNumber = 0;
-            let el = (await page.$$(selector))[elNumber];
+            const els = await page.$$(selector);
+            let el = els[elNumber];
             /* eslint-disable no-await-in-loop */
             while (el && elNumber < maxCount) {
                 output = path.join(output, '../' + elNumber + '.png');
                 await el.screenshot({ path: output });
 
                 // minify screenshot
-                if (program.smartCrop)
-                    await imageProcessor.smartCrop(output);
+                try {
+                    if (program.smartCrop)
+                        await imageProcessor.smartCrop(output);
+                } catch (e) {}
+
                 await imageProcessor.minify(output);
                 console.info(`       Output path: ${chalk.cyan(output)}`);
                 pkg && writeIntoPackage(output);
 
-                el = (await page.$$(selector))[++elNumber];
+                el = els[++elNumber];
             }
 
             // close chromium
