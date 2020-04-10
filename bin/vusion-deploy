@@ -51,6 +51,11 @@ if (fs.statSync(source).isDirectory()) {
     formFiles = [source];
 }
 
+if (!formFiles.length) {
+    logger.warn('No files found!');
+    process.exit(0);
+}
+
 formFiles = formFiles.map((filePath) => {
     let relativePath = path.relative(cwd, filePath).replace(/^public[\\/]/, '');
     relativePath = path.join(prefix, relativePath);

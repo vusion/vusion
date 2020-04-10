@@ -33,11 +33,11 @@ For example:
     .option('-W, --watch', 'Not stop local server after screenshoting. You can watch pages in a real browser')
     .option('-s, --selector <selector>', 'Select a element through CSS selector')
     .option('-c, --code-example [number]', 'Auto detect selector from code example. Batch mode if not specify example number')
-    .option('-m, --max-count <height>', 'Max screenshots count in batch mode. Defaults to 6', parseInt, 6)
+    .option('-m, --max-count <height>', 'Max screenshots count in batch mode. Defaults to 10', parseInt, 10)
     .option('-d, --delay <delay>', 'Screenshot with a delay', parseInt)
     .option('-w, --width <width>', 'Viewport width', parseInt)
     .option('-h, --height <height>', 'Viewport height', parseInt)
-    .option('--smart-crop', 'Crop image transparent or white margin cleanly')
+    .option('--smart-crop [margin]', 'Crop image transparent or white margin cleanly. Value is margin 20 by default')
     .option('--dsf <device-scale-factor>', 'Specify device scale factor (can be thought of as dpr). Defaults to 2', parseInt, 2)
     .option('--package [package-path]', 'Autoset package.json screenshots')
     .parse(process.argv);
@@ -148,8 +148,8 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
 
                 // minify screenshot
                 try {
-                    if (program.smartCrop)
-                        await imageProcessor.smartCrop(output);
+                    if (program.smartCrop !== undefined)
+                        await imageProcessor.smartCrop(output, program.smartCrop);
                 } catch (e) {}
 
                 await imageProcessor.minify(output);
@@ -172,8 +172,8 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
         }
 
         // minify screenshot
-        if (program.smartCrop)
-            await imageProcessor.smartCrop(output);
+        if (program.smartCrop !== undefined)
+            await imageProcessor.smartCrop(output, program.smartCrop);
         await imageProcessor.minify(output);
 
         // close chromium

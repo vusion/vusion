@@ -31,7 +31,8 @@ program
     .parse(process.argv);
 
 const name = pkg.name;
-const version = semver.clean(program.args[0] || pkg.version);
+const currentVersion = pkg.version;
+let version = program.args[0] && semver.clean(program.args[0]);
 const config = vusion.rc.configurator.load();
 
 const manager = program.manager || config.publish_manager;
@@ -44,12 +45,36 @@ const ACCESS_MAP = {
 };
 
 async function publish() {
-    const message = `The new version of ${chalk.yellow(name)} is ${chalk.yellow(version)}`;
+    console.info(`  Package ${chalk.yellow(name)}`);
+    console.info('  Current version: ' + chalk.cyan(currentVersion));
+
+    if (!version) {
+        const arr = currentVersion.split('.');
+        const choices = [
+            { name: 'patch', value: [arr[0], arr[1], +arr[2] + 1].join('.') },
+            { name: 'minor', value: [arr[0], +arr[1] + 1, 0].join('.') },
+            { name: 'major', value: [+arr[0] + 1, 0, 0].join('.') },
+        ];
+        choices.forEach((choice) => choice.name += ' - ' + choice.value);
+
+        const { newVersion } = await inquirer.prompt([{
+            type: 'list',
+            name: 'newVersion',
+            message: `Which version do you want to publish?`,
+            choices,
+        }]);
+
+        version = newVersion;
+    }
+
+    const message = `      New version: ${chalk.cyan(version)}`;
+    console.info(message);
+    console.info('-'.repeat(32));
+
     const { yes } = await inquirer.prompt([{
         name: 'yes',
         type: 'confirm',
-        message: message + '\n' + '-'.repeat(message.length + 4 - 20)
-+ `\nAre you sure to continue?`,
+        message: 'Make sure to continue',
     }]);
 
     if (!yes)
