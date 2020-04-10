@@ -208,7 +208,7 @@ async function publish() {
     if (!gitAddFailed) {
         console.info();
         try {
-            await cli.exec('git', 'commit', '-m', `:bookmark: Publish ${info}`);
+            await cli.exec('git', 'commit', '-m', `":bookmark: Publish ${info}"`);
         } catch (e) {}
 
         let pushAndTag = true;
