@@ -3,12 +3,12 @@
 const path = require('path');
 const chalk = require('chalk');
 const vusion = require('vusion-api');
+const cli = vusion.cli;
 const inquirer = require('inquirer');
 inquirer.registerPrompt('autocomplete', require('inquirer-autocomplete-prompt'));
 inquirer.registerPrompt('fuzzypath', require('inquirer-fuzzy-path'));
 const fuzzy = require('fuzzy');
 const ora = require('ora');
-const logger = require('../lib/logger');
 
 /**
  * Parse Commands
@@ -98,11 +98,11 @@ async function remove(args) {
             await vusion.ms.removeModule(options);
             spinner.stopAndPersist();
             console.info();
-            logger.done(`Successfully removed module ${chalk.yellow(options.name)}.`);
+            cli.done(`Successfully removed module ${chalk.yellow(options.name)}.`);
         } catch (e) {
             spinner.stopAndPersist();
             console.error();
-            logger.error(e);
+            cli.error(e);
             process.exit(1);
         }
     }

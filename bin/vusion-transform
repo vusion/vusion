@@ -1,12 +1,10 @@
 #!/usr/bin/env node
 
-const fs = require('fs-extra');
 const path = require('path');
 const vusion = require('vusion-api');
+const cli = vusion.cli;
 const inquirer = require('inquirer');
 const chalk = require('chalk');
-const logger = require('../lib/logger');
-const exec = require('../lib/just-exec');
 const execa = require('execa');
 
 /**
@@ -23,15 +21,15 @@ program
 
 const vuePath = program.args[0];
 if (!vuePath) {
-    logger.error('No vue path given!');
+    cli.error('No vue path given!');
     process.exit(1);
 } else if (!vuePath.endsWith('.vue')) {
-    logger.error('Please specify a vue path!');
+    cli.error('Please specify a vue path!');
     process.exit(1);
 }
 
 if (program.package && !(program.type === 'component' || program.type === 'block')) {
-    logger.error(`Unsupported type ${program.type}!`);
+    cli.error(`Unsupported type ${program.type}!`);
     process.exit(1);
 }
 
@@ -85,7 +83,7 @@ async function run() {
         vueFile.transform();
         await vueFile.save();
 
-        logger.done(`${vueFile.fileName} 已成功由${vueFile.isDirectory ? '单文件 -转为-> 多文件' : '多文件 -转为-> 单文件'}！`);
+        cli.done(`${vueFile.fileName} 已成功由${vueFile.isDirectory ? '单文件 -转为-> 多文件' : '多文件 -转为-> 单文件'}！`);
     }
 }
 

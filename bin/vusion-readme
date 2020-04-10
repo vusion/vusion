@@ -3,7 +3,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const vusion = require('vusion-api');
-const logger = require('../lib/logger');
+const cli = vusion.cli;
 
 /**
  * Parse Commands
@@ -33,10 +33,10 @@ Promise.all(vusion.fs.listAllFiles(directory, {
     try {
         result = await apiHandler.markdown();
     } catch (e) {
-        logger.error(filePath);
+        cli.error(filePath);
         throw e;
     }
     const readmePath = path.join(filePath, '../README.md');
     await fs.writeFile(readmePath, result);
-    logger.done(readmePath);
+    cli.done(readmePath);
 }));

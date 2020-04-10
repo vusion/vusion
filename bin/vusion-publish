@@ -5,9 +5,8 @@ const path = require('path');
 const semver = require('semver');
 const chalk = require('chalk');
 const inquirer = require('inquirer');
-const logger = require('../lib/logger');
 const vusion = require('vusion-api');
-const exec = require('../lib/just-exec');
+const cli = vusion.cli;
 
 const pkgPath = path.resolve(process.cwd(), 'package.json');
 if (!fs.existsSync(pkgPath)) {
@@ -113,7 +112,7 @@ async function publish() {
             let repository = pkg.repository || '';
             //             if (!repository) {
             //                 console.warn('');
-            //                 logger.warn('Information in package.json is not complete!');
+            //                 cli.warn('Information in package.json is not complete!');
             //                 console.warn(`Please set the repository. A string or an object. For example:
             // "repository": "vusion/cloud-ui-materials"
             // "repository": "https://github.com/vusion/cloud-ui-materials/tree/master/src/blocks/u-some-block.vue"
@@ -133,30 +132,30 @@ async function publish() {
             if (pkg.vusion.team) {
                 const result = await vusion.ms.teamExist(pkg.vusion.team);
                 if (!result) {
-                    logger.error(`You are not in team '${pkg.vusion.team}'!`);
+                    cli.error(`You are not in team '${pkg.vusion.team}'!`);
                     process.exit(1);
                 }
             }
 
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             try {
-                await exec('git add package.json');
+                await cli.exec('git add package.json');
             } catch (e) {
                 gitAddFailed = true;
             }
 
-            !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
+            !program.skipNpm && await cli.exec(npmCmds.join(' ')); // prepublishOnly
 
             if (pkg.vusion.type === 'component' || pkg.vusion.type === 'block') {
                 try {
                     // git add . 加在 npm 包中也不太好，不加也不好
                     if (!gitAddFailed)
-                        await exec('git add .');
+                        await cli.exec('git add .');
                 } catch (e) {}
             }
 
             console.info();
-            logger.done('Successfully published!');
+            cli.done('Successfully published!');
 
             pkg = JSON.parse(await fs.readFile(pkgPath, 'utf8'));
 
@@ -183,25 +182,25 @@ async function publish() {
                 team: pkg.vusion.team,
                 dependencies: JSON.stringify(pkg.dependencies),
             }));
-            logger.done('Registered package on vusion platform.');
+            cli.done('Registered package on vusion platform.');
 
             if (pkg.scripts.deploy)
-                await exec('npm run deploy');
+                await cli.exec('npm run deploy');
         } else { // 普通 publish
             await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             try {
-                await exec('git add package.json');
+                await cli.exec('git add package.json');
             } catch (e) {
                 gitAddFailed = true;
             }
-            !program.skipNpm && await exec(npmCmds.join(' ')); // prepublishOnly
+            !program.skipNpm && await cli.exec(npmCmds.join(' ')); // prepublishOnly
 
             console.info();
-            logger.done('Successfully published!');
+            cli.done('Successfully published!');
         }
     } catch (e) {
         console.info();
-        logger.error('Failed to publish!');
+        cli.error('Failed to publish!');
         e && console.error(e.response ? e.response.data : e);
         process.exit(1);
     }
@@ -209,23 +208,23 @@ async function publish() {
     if (!gitAddFailed) {
         console.info();
         try {
-            await exec('git', ['commit', '-m', `:bookmark: Publish ${info}`]);
+            await cli.exec('git', 'commit', '-m', `:bookmark: Publish ${info}`);
         } catch (e) {}
 
         let pushAndTag = true;
         try {
-            await exec(`git push`);
+            await cli.exec(`git push`);
         } catch (e) {
             pushAndTag = false;
         }
         try {
-            await exec(`git tag ${info}`);
-            await exec(`git push origin ${info}`);
+            await cli.exec(`git tag ${info}`);
+            await cli.exec(`git push origin ${info}`);
         } catch (e) {
             pushAndTag = false;
         }
         console.info();
-        pushAndTag && logger.done(`Successfully pushed git branch and tag ${chalk.yellow(info)}`);
+        pushAndTag && cli.done(`Successfully pushed git branch and tag ${chalk.yellow(info)}`);
     }
 }
 

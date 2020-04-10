@@ -3,7 +3,7 @@
 const fs = require('fs');
 const path = require('path');
 const vusion = require('vusion-api');
-const logger = require('../lib/logger');
+const cli = vusion.cli;
 
 /**
  * Parse Commands
@@ -52,7 +52,7 @@ if (fs.statSync(source).isDirectory()) {
 }
 
 if (!formFiles.length) {
-    logger.warn('No files found!');
+    cli.warn('No files found!');
     process.exit(0);
 }
 
@@ -77,13 +77,13 @@ upload.then(({ result }) => {
     }
     // const url = `https://${first.bucket}.${first.endpoint}${+first.port === 80 ? '' : ':' + first.port}/${first.key}`;
     const url = 'https://static-vusion.163yun.com/' + first.key;
-    logger.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
+    cli.done(`Successfully deployed files '${path.relative(cwd, source)}' to NOS static bucket.
 Try to access: ${url}`);
 }).catch((e) => {
     if (e.response && e.response.status === 413) {
-        logger.error('Exceeded size of files!');
+        cli.error('Exceeded size of files!');
         console.error(e.toString());
     } else
-        logger.error(e);
+        cli.error(e);
     process.exit(1);
 });

@@ -3,7 +3,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const vusion = require('vusion-api');
-const logger = require('../lib/logger');
+const cli = vusion.cli;
 
 /**
  * Parse Commands
@@ -55,7 +55,7 @@ files.forEach((filePath) => {
     try {
         partial = apiHandler.toVetur();
     } catch (e) {
-        logger.error(filePath);
+        cli.error(filePath);
         throw e;
     }
     Object.assign(vetur.tags, partial.tags);
@@ -64,4 +64,4 @@ files.forEach((filePath) => {
 
 fs.outputFileSync(path.resolve(process.cwd(), 'vetur/tags.json'), JSON.stringify(vetur.tags, null, 2));
 fs.outputFileSync(path.resolve(process.cwd(), 'vetur/attributes.json'), JSON.stringify(vetur.attributes, null, 2));
-logger.done('Generated vetur tags.json and attributes.json');
+cli.done('Generated vetur tags.json and attributes.json');

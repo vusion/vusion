@@ -4,7 +4,7 @@ const fs = require('fs-extra');
 const path = require('path');
 const chalk = require('chalk');
 const ora = require('ora');
-const logger = require('../lib/logger');
+const { cli } = require('vusion-api');
 const detect = require('detect-port');
 const imageProcessor = require('../lib/imageProcessor');
 const createServer = require('../lib/createServer');
@@ -163,7 +163,7 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
             await browser.close();
             spinner.stopAndPersist();
             console.info();
-            logger.done('Screenshot success!');
+            cli.done('Screenshot success!');
             pkg && await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
             return;
         } else {
@@ -181,14 +181,14 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
 
         spinner.stopAndPersist();
         console.info();
-        logger.done('Screenshot success!');
+        cli.done('Screenshot success!');
         console.info(`       Output path: ${chalk.cyan(output)}`);
         pkg && writeIntoPackage(output);
         pkg && await fs.writeFile(pkgPath, JSON.stringify(pkg, null, 2) + '\n');
     } catch (err) {
         spinner.stopAndPersist();
         console.info();
-        logger.error('Screenshot fail!');
+        cli.error('Screenshot fail!');
 
         // chromium not download error
         // stdout reinstall puppeteer tips.

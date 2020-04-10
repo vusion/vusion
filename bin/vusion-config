@@ -1,9 +1,7 @@
 #!/usr/bin/env node
 
-const path = require('path');
-const logger = require('../lib/logger');
-const exec = require('../lib/just-exec');
 const vusion = require('vusion-api');
+const cli = vusion.cli;
 
 /**
  * Parse Commands
@@ -35,13 +33,13 @@ if (action === 'set') {
 
     config[key] = value;
     configurator.save();
-    logger.done(key + '=' + value);
+    cli.done(key + '=' + value);
 } else if (action === 'get') {
     console.info(config[key]);
 } else if (action === 'delete') {
     delete config[key];
     configurator.save();
-    logger.done('Deleted key ' + key);
+    cli.done('Deleted key ' + key);
 } else if (action === 'add') {
     if (key === 'registry') {
         url = url.replace(/\/$/, '');
@@ -49,20 +47,20 @@ if (action === 'set') {
         config.registries = config.registries || {};
         config.registries[value] = url;
         configurator.save();
-        logger.done(value + '=' + url);
+        cli.done(value + '=' + url);
     }
 } else if (action === 'remove') {
     if (key === 'registry') {
         config.registries = config.registries || {};
         delete config.registries[value];
         configurator.save();
-        logger.done('Remove registry ' + value);
+        cli.done('Remove registry ' + value);
     }
 } else if (action === 'list') {
     console.info(configurator.yaml);
 } else if (action === 'edit') {
-    exec('vi', [configurator.rcPath]);
+    cli.exec('vi', configurator.rcPath);
 } else {
-    logger.error('Unknown action of vusion-config!');
+    cli.error('Unknown action of vusion-config!');
     process.exit(1);
 }
