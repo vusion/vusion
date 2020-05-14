@@ -11,6 +11,7 @@ const program = require('commander');
 program
     .usage('[directory]')
     .description(`Push a directory to gh-pages. Defaults to 'public'`)
+    .option('-d, --dotfiles', 'Upload dotfiles', false)
     .parse(process.argv);
 
 let directory = program.args[0] || 'public';
@@ -27,7 +28,9 @@ if (!fs.statSync(directory).isDirectory()) {
 }
 
 ghpages.clean();
-ghpages.publish(directory, (err) => {
+ghpages.publish(directory, {
+    dotfiles: program.dotfiles,
+}, (err) => {
     if (err)
         console.error(err);
     else
