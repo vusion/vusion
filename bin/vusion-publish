@@ -155,7 +155,7 @@ async function publish() {
                 const screenshotScript = pkg.scripts.screenshot;
                 if (screenshotScript && screenshotScript.includes('--code-example')) {
                     const cap = screenshotScript.match(/(?:--max-count|-m)\s+(\d+)/);
-                    const maxCount = cap ? 10 : +cap[1];
+                    const maxCount = cap ? +cap[1] : 10;
                     const vueFile = new vusion.VueFile(cwd);
                     const cap2 = screenshotScript.match(/public\/index\.html#(.+?)\s/);
                     await vueFile.open();
