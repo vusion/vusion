@@ -199,7 +199,7 @@ async function add(args) {
 
             if (!options.target) {
                 const fileList = vusion.fs.listAllFiles('', {
-                    patterns: ['!**/node_modules'],
+                    patterns: ['!**/node_modules', '!**/.git'],
                     includes: /\.vue$/,
                 }).sort();
                 const { target } = await inquirer.prompt([{

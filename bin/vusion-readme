@@ -23,7 +23,7 @@ if (!fs.statSync(absolutePath).isDirectory())
     console.error(`"${absolutePath}" is not a directory!`);
 
 Promise.all(vusion.fs.listAllFiles(directory, {
-    patterns: ['!**/node_modules'],
+    patterns: ['!**/node_modules', '!**/.git'],
     includes: /api\.yaml$/,
 }).map(async (filePath) => {
     const raw = await fs.readFile(filePath, 'utf8');

@@ -35,7 +35,7 @@ try {
             patterns: ['!proto-ui.vusion/node_modules'],
             includes: /api\.yaml$/,
         }).concat(vusion.fs.listAllFiles(directory, {
-            patterns: ['!**/node_modules'],
+            patterns: ['!**/node_modules', '!**/.git'],
             includes: /api\.yaml$/,
         }));
     }
@@ -43,7 +43,7 @@ try {
 
 if (!files) {
     files = vusion.fs.listAllFiles(directory, {
-        patterns: ['!**/node_modules'],
+        patterns: ['!**/node_modules', '!**/.git'],
         includes: /api\.yaml$/,
     });
 }

@@ -1,0 +1,78 @@
+#!/usr/bin/env node
+
+const fs = require('fs-extra');
+const path = require('path');
+const vusion = require('vusion-api');
+const chalk = require('chalk');
+const { spawnSync } = require('child_process');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('<source> <target>')
+    .description(`Check differences between two path files`)
+    .parse(process.argv);
+
+const path1 = program.args[0];
+const path2 = program.args[1];
+if (!path1 || !path2) {
+    vusion.cli.error('Must specify two paths!');
+    process.exit(1);
+}
+
+if (!fs.existsSync(path1)) {
+    vusion.cli.warn(chalk.white(path1), 'Not Exists');
+    process.exit();
+}
+if (!fs.existsSync(path2)) {
+    vusion.cli.warn(chalk.white(path2), 'Not Exists');
+    process.exit();
+}
+
+let files1 = [];
+let files2 = [];
+const path1Stat = fs.statSync(path1).isDirectory();
+const path2Stat = fs.statSync(path2).isDirectory();
+if (!path1Stat) { // 文件比较
+    if (path2Stat) {
+        vusion.cli.warn(`${chalk.white(path1)} is a file but ${chalk.white(path2)} is a directory`, 'Not Same Type');
+        process.exit();
+    }
+
+    files1 = [path1];
+    files2 = [path2];
+} else { // 文件夹比较
+    if (!path2Stat) {
+        vusion.cli.warn(`${chalk.white(path1)} is a directory but ${chalk.white(path2)} is a file`, 'Not Same Type');
+        process.exit();
+    }
+
+    files1 = vusion.fs.listAllFiles(path1, {
+        type: 'file',
+        patterns: ['!**/node_modules', '!**/.git'],
+    });
+    files2 = vusion.fs.listAllFiles(path2, {
+        type: 'file',
+        patterns: ['!**/node_modules', '!**/.git'],
+    });
+}
+
+function getFile2(file1) {
+    const relativePath = path.relative(path1, file1);
+    return path.join(path2, relativePath);
+}
+
+files1.forEach((file1) => {
+    const file2 = getFile2(file1);
+
+    const result = spawnSync(`diff ${file1} ${file2}`, { shell: true });
+    if (result.status) {
+        vusion.cli.warn(`${chalk.white(path1)} and ${chalk.white(path2)} are different`, 'Diff');
+        const stdout = String(result.stdout).trim();
+        stdout && console.info(stdout);
+        const stderr = String(result.stderr).trim();
+        stderr && console.info(stderr);
+    }
+});
