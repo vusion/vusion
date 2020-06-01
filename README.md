@@ -34,13 +34,15 @@ vusion init
 - `vusion -V, --version`: Show the version of current CLI
 
 - `init <type> <name>`: Initialize a material
-- `add <type> [source] [target]`: Add a kind of material: block
-- `remove <type> [source] [target]`: Remove a kind of material: block
+- `config <action> <key> [value]`: Configure CLI options
 - `publish <version>`: Publish a new version
-- `screenshot`: Take a screenshot of a web page
+- `screenshot <url|local-file>`: Take a screenshot of a web page
+- `deploy`: Push files to NOS static bucket
 - `ghpages`: Push a directory to gh-pages
 - `readme`: Generate final readable README.md from api.yaml and docs
 - `vetur`: Generate tags.json and attributes.json for Vetur
+- `diff <source> <target>`: Check differences between two path files
+- `sync <source> <target>`: Sync files from one path to another. Support watch mode
 - `help [cmd]`: display help for `[cmd]`
 
 Run `vusion <command> --help` for detailed usage of given command.
