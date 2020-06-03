@@ -79,6 +79,8 @@ if (program.watch) {
     const watcher = chokidar.watch(path1, {
         ignoreInitial: true,
     });
+
+    console.info('vusion-sync is watching the files...');
     watcher.on('all', (event, file1) => {
         if (file1.includes('node_modules/') || file1.includes('.git/'))
             return;
@@ -93,21 +95,21 @@ if (program.watch) {
                 fs.mkdirSync(file2);
                 vusion.cli.done(file2, 'Mkdir');
             } catch (e) {
-                console.log(e);
+                console.error(e);
             }
         } else if (event === 'unlink') {
             try {
                 fs.unlinkSync(file2);
                 vusion.cli.done(file2, 'Remove');
             } catch (e) {
-                console.log(e);
+                console.error(e);
             }
         } else if (event === 'unlinkDir') {
             try {
                 fs.unlinkSync(file2);
                 vusion.cli.done(file2, 'Remove');
             } catch (e) {
-                console.log(e);
+                console.error(e);
             }
         }
     });

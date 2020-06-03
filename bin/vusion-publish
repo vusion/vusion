@@ -94,7 +94,8 @@ async function publish() {
     if (program.registry)
         npmCmds.push(`--registry ${registry}`);
 
-    const info = name.endsWith('.vue') ? `${name}@${version}` : `v${version}`;
+    const isGitCurrentDir = fs.existsSync(path.resolve(cwd, '.git'));
+    const info = isGitCurrentDir ? `v${version}` : `${name}@${version}`;
 
     let gitAddFailed = false;
     try {
