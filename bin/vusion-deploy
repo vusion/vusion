@@ -83,7 +83,11 @@ Try to access: ${url}`);
     if (e.response && e.response.status === 413) {
         cli.error('Exceeded size of files!');
         console.error(e.toString());
-    } else
-        cli.error(e);
+    } else {
+        if (e.response)
+            console.error(e.response.data);
+        else
+            cli.error(e);
+    }
     process.exit(1);
 });

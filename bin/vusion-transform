@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+const fs = require('fs');
 const path = require('path');
 const vusion = require('vusion-api');
 const cli = vusion.cli;
@@ -16,6 +17,8 @@ program
     .description('Transform Vue file between singlefile and multifile pattern')
     .option('-f, --force', 'Force to transform')
     .option('-p, --package', 'Add package info')
+    .option('-d, --decomposed', 'Transform decomposed')
+    .option('--exports', 'Transform decomposed exports')
     .option('-t, --type <type>', 'to component or block', 'component')
     .parse(process.argv);
 
@@ -64,6 +67,45 @@ async function run() {
         if (!vueFile.isDirectory)
             vueFile.transform();
         await vueFile.save();
+    } else if (program.decomposed) {
+        const vueFile = new vusion.VueFile(fullPath);
+        await vueFile.open();
+
+        await Promise.all(vueFile.children.map(async (child) => {
+            await child.open();
+            if (child.isDirectory && !child.isComposed) {
+                child.transformExportStyle();
+                const checkResult = child.checkTransform();
+                if (checkResult !== true) {
+                    return console.warn(child.fullPath, checkResult);
+                } else {
+                    child.transform();
+                }
+            }
+            await child.save();
+        }));
+
+        vueFile.transformDecomposed();
+        await vueFile.save();
+
+        if (program.exports) {
+            const indexPath = path.join(fullPath, 'index.js');
+            if (fs.existsSync(indexPath))
+                return;
+
+            const content = [];
+            content.push(`import ${vueFile.componentName} from './index.vue';`);
+            vueFile.children.forEach((child) => content.push(`import ${child.componentName} from './${child.fileName}';`));
+            content.push('');
+            content.push('export {');
+            content.push(`    ${vueFile.componentName},`);
+            vueFile.children.forEach((child) => content.push(`    ${child.componentName},`));
+            content.push('};');
+            content.push('');
+            content.push(`export default ${vueFile.componentName};`);
+
+            fs.writeFileSync(indexPath, content.join('\n') + '\n');
+        }
     } else {
         // 检查多文件 -> 单文件时，是否需要判断强制转换
         const checkResult = vueFile.checkTransform();
