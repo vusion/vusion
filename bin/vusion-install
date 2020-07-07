@@ -1,0 +1,64 @@
+#!/usr/bin/env node
+
+const fs = require('fs-extra');
+const path = require('path');
+const vusion = require('vusion-api');
+const ora = require('ora');
+
+/**
+ * Parse Commands
+ */
+const program = require('commander');
+program
+    .usage('[package]')
+    .description(`Install a vusion package`)
+    .option('-S, --save', 'Save in vusionDependencies field in package.json', true)
+    .option('--registry <url>', 'Use custom registry if manager default registry is not you want. For example: --registry https://registry.npm.taobao.org')
+    .parse(process.argv);
+
+const cwd = process.cwd();
+const packageName = program.args[0] || '';
+
+async function run() {
+    const spinner = ora('Installing packages ...').start();
+    if (packageName) {
+        const arr = packageName.trim().split('@');
+        let name;
+        let version;
+        if (packageName[0] === '@') {
+            name = '@' + arr[1];
+            version = arr[2];
+        } else {
+            name = arr[0];
+            version = arr[1];
+        }
+        const result = await vusion.ms.install({
+            registry: program.registry,
+            name,
+            version,
+        }, cwd, program.save);
+        spinner.stop();
+        console.info(`+ ${result}`);
+    } else {
+        const cwdPkgPath = path.resolve(cwd, 'package.json');
+        if (!fs.existsSync(cwdPkgPath))
+            return;
+
+        const cwdPkgInfo = JSON.parse(await fs.readFile(cwdPkgPath, 'utf8'));
+        const vusionDeps = cwdPkgInfo.vusionDependencies || {};
+        const results = await Promise.all(Object.keys(vusionDeps).map((name) => vusion.ms.install({
+            registry: program.registry,
+            name,
+        }, cwd, program.save)));
+
+        spinner.stop();
+        console.info(results.map((result) => `+ ${result}`).join('\n'));
+    }
+}
+
+run().catch((e) => {
+    console.error();
+    vusion.cli.error('Failed to install');
+    console.error(e);
+    process.exit(1);
+});

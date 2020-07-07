@@ -29,6 +29,7 @@ program
     .command('add <type> [source] [target]', `Add a kind of material: ${chalk.yellow('block')}`)
     .command('remove <type> [source] [target]', `Remove a kind of material: ${chalk.yellow('block')}`)
     .command('config <action> <key> [value]', 'Configure CLI options')
+    .command('install [package]', 'Install a vusion package')
     .command('publish <version>', 'Publish a new version')
     .command('screenshot <url|local-file>', 'Take a screenshot of a web page')
     .command('deploy', 'Push files to NOS static bucket')
