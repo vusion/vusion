@@ -12,9 +12,10 @@ const program = require('commander');
 program
     .usage('[package]')
     .description(`Install a vusion package`)
-    .option('-S, --save', 'Save in vusionDependencies field in package.json', true)
+    // .option('-S, --save', 'Save in vusionDependencies field in package.json', true)
     .option('--registry <url>', 'Use custom registry if manager default registry is not you want. For example: --registry https://registry.npm.taobao.org')
     .parse(process.argv);
+program.save = true;
 
 const cwd = process.cwd();
 const packageName = program.args[0] || '';
@@ -45,7 +46,7 @@ async function run() {
             return;
 
         const cwdPkgInfo = JSON.parse(await fs.readFile(cwdPkgPath, 'utf8'));
-        const vusionDeps = cwdPkgInfo.vusionDependencies || {};
+        const vusionDeps = cwdPkgInfo.vusionDependencies = cwdPkgInfo.vusionDependencies || {};
         const results = await Promise.all(Object.keys(vusionDeps).map((name) => vusion.ms.install({
             registry: program.registry,
             name,

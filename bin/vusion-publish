@@ -185,6 +185,7 @@ async function publish() {
                 registry,
                 team: pkg.vusion.team,
                 dependencies: JSON.stringify(pkg.dependencies),
+                vusionDependencies: JSON.stringify(pkg.vusionDependencies),
             }));
             cli.done('Registered package on vusion platform.');
 
