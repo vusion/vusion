@@ -35,6 +35,7 @@ program
     .command('deploy', 'Push files to NOS static bucket')
     .command('ghpages', 'Push a directory to gh-pages')
     .command('readme', 'Generate final readable README.md from api.yaml and docs')
+    .command('lcap', 'Generate usage.json for LCAP')
     .command('vetur', 'Generate tags.json and attributes.json for Vetur')
     .command('transform <vue-path>', 'Transform Vue file between singlefile and multifile pattern')
     .command('diff <source> <target>', 'Check differences between two path files')

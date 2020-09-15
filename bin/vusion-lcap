@@ -1,0 +1,8 @@
+#!/usr/bin/env node
+
+const path = require('path');
+const fs = require('fs-extra');
+const getUsage = require('../lib/lcap');
+const root = process.cwd();
+const usage = getUsage(root);
+fs.writeFileSync(path.join(root, 'usage.json'), JSON.stringify(usage, null, 4));
