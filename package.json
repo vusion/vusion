@@ -1,7 +1,7 @@
 {
   "name": "vusion",
   "description": "CLI for Vusion Projects, including Application and UI Library.",
-  "version": "0.12.7",
+  "version": "0.12.8",
   "author": "Rainfore <rainforest92@126.com>",
   "bin": {
     "vusion": "bin/vusion"
@@ -51,7 +51,7 @@
     "semver": "^5.5.0",
     "shelljs": "^0.8.2",
     "update-notifier": "^2.5.0",
-    "vusion-api": "^0.6.29",
+    "vusion-api": "^0.6.30",
     "yaml": "^1.7.2"
   },
   "devDependencies": {
