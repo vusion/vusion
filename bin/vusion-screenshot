@@ -121,6 +121,11 @@ async function screenshot({ url, selector, elNumber, maxCount, output, delay, vi
             await sleep(delay);
         }
 
+        const body = await page.$('body');
+        const bodySize = await body.boundingBox();
+        viewport.height = Math.max(viewport.height, Math.ceil(bodySize.height));
+        page.setViewport(viewport);
+
         // Ensure output path
         const outputDir = path.dirname(output);
         if (!fs.existsSync(outputDir))
