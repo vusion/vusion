@@ -2,6 +2,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const semver = require('semver');
 const vusion = require('vusion-api');
 const cli = vusion.cli;
 
@@ -14,6 +15,8 @@ program
     .description(`Push files to NOS static bucket. Defaults to 'public'`)
     .option('--framework <framework>', `publish framework`)
     .option('-v, --version-level <version-level>', `Specify the minimum version level after '@'. 'major', 'minor', 'patch'`, 'patch')
+    .option('-n, --name <name>', `Custom package name`)
+    .option('-V, --version <packageVersion>', `Custom package version`)
     .parse(process.argv);
 
 let source = program.args[0] || 'public';
@@ -32,13 +35,17 @@ if (!fs.existsSync(pkgPath)) {
     process.exit(1);
 }
 const pkg = require(pkgPath);
-let version = pkg.version;
+let version = program.packageVersion || pkg.version;
+if (!semver.valid(version)) {
+    console.error(`Invalid version ${version}`);
+    process.exit(1);
+}
 if (program.versionLevel === 'major')
     version = version.split('.')[0];
 else if (program.versionLevel === 'minor')
     version = version.split('.').slice(0, 2).join('.');
 
-const prefix = `packages/${pkg.name}@${version}`;
+const prefix = `packages/${typeof program.name === 'string' ? program.name : pkg.name}@${version}`;
 let formFiles;
 
 if (fs.statSync(source).isDirectory()) {
@@ -61,6 +68,7 @@ formFiles = formFiles.map((filePath) => {
     relativePath = path.join(prefix, relativePath);
     return { name: relativePath, path: filePath };
 });
+
 let upload = null;
 if (isFramework) {
     upload = vusion.ms.upload.framework(formFiles, program.framework);
